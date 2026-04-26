@@ -578,6 +578,16 @@
               <FileType>5</FileType>
               <FilePath>..\src\drivers\drv_uart.h</FilePath>
             </File>
+            <File>
+              <FileName>drv_jy61p.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\src\drivers\drv_jy61p.c</FilePath>
+            </File>
+            <File>
+              <FileName>drv_jy61p.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\src\drivers\drv_jy61p.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -592,6 +602,11 @@
               <FileName>isr_uart.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\src\isr\isr_uart.c</FilePath>
+            </File>
+            <File>
+              <FileName>isr_jy61p.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\src\isr\isr_jy61p.c</FilePath>
             </File>
           </Files>
         </Group>

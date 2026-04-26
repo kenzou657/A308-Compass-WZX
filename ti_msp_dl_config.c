@@ -41,7 +41,7 @@
 #include "ti_msp_dl_config.h"
 
 DL_TimerG_backupConfig gENCODER1ABackup;
-DL_TimerA_backupConfig gENCODER2ABackup;
+DL_TimerG_backupConfig gENCODER2ABackup;
 DL_TimerA_backupConfig gCLOCKBackup;
 
 /*
@@ -59,6 +59,7 @@ SYSCONFIG_WEAK void SYSCFG_DL_init(void)
     SYSCFG_DL_ENCODER2A_init();
     SYSCFG_DL_CLOCK_init();
     SYSCFG_DL_UART_CAM_init();
+    SYSCFG_DL_UART_IMU_init();
     SYSCFG_DL_DMA_init();
     SYSCFG_DL_SYSTICK_init();
     /* Ensure backup structures have no valid state */
@@ -78,7 +79,7 @@ SYSCONFIG_WEAK bool SYSCFG_DL_saveConfiguration(void)
     bool retStatus = true;
 
 	retStatus &= DL_TimerG_saveConfiguration(ENCODER1A_INST, &gENCODER1ABackup);
-	retStatus &= DL_TimerA_saveConfiguration(ENCODER2A_INST, &gENCODER2ABackup);
+	retStatus &= DL_TimerG_saveConfiguration(ENCODER2A_INST, &gENCODER2ABackup);
 	retStatus &= DL_TimerA_saveConfiguration(CLOCK_INST, &gCLOCKBackup);
 
     return retStatus;
@@ -90,7 +91,7 @@ SYSCONFIG_WEAK bool SYSCFG_DL_restoreConfiguration(void)
     bool retStatus = true;
 
 	retStatus &= DL_TimerG_restoreConfiguration(ENCODER1A_INST, &gENCODER1ABackup, false);
-	retStatus &= DL_TimerA_restoreConfiguration(ENCODER2A_INST, &gENCODER2ABackup, false);
+	retStatus &= DL_TimerG_restoreConfiguration(ENCODER2A_INST, &gENCODER2ABackup, false);
 	retStatus &= DL_TimerA_restoreConfiguration(CLOCK_INST, &gCLOCKBackup, false);
 
     return retStatus;
@@ -102,9 +103,10 @@ SYSCONFIG_WEAK void SYSCFG_DL_initPower(void)
     DL_GPIO_reset(GPIOB);
     DL_TimerG_reset(PWM_MOTOR_INST);
     DL_TimerG_reset(ENCODER1A_INST);
-    DL_TimerA_reset(ENCODER2A_INST);
+    DL_TimerG_reset(ENCODER2A_INST);
     DL_TimerA_reset(CLOCK_INST);
     DL_UART_Main_reset(UART_CAM_INST);
+    DL_UART_Main_reset(UART_IMU_INST);
 
 
 
@@ -112,9 +114,10 @@ SYSCONFIG_WEAK void SYSCFG_DL_initPower(void)
     DL_GPIO_enablePower(GPIOB);
     DL_TimerG_enablePower(PWM_MOTOR_INST);
     DL_TimerG_enablePower(ENCODER1A_INST);
-    DL_TimerA_enablePower(ENCODER2A_INST);
+    DL_TimerG_enablePower(ENCODER2A_INST);
     DL_TimerA_enablePower(CLOCK_INST);
     DL_UART_Main_enablePower(UART_CAM_INST);
+    DL_UART_Main_enablePower(UART_IMU_INST);
 
 
     delay_cycles(POWER_STARTUP_DELAY);
@@ -135,6 +138,10 @@ SYSCONFIG_WEAK void SYSCFG_DL_GPIO_init(void)
         GPIO_UART_CAM_IOMUX_TX, GPIO_UART_CAM_IOMUX_TX_FUNC);
     DL_GPIO_initPeripheralInputFunction(
         GPIO_UART_CAM_IOMUX_RX, GPIO_UART_CAM_IOMUX_RX_FUNC);
+    DL_GPIO_initPeripheralOutputFunction(
+        GPIO_UART_IMU_IOMUX_TX, GPIO_UART_IMU_IOMUX_TX_FUNC);
+    DL_GPIO_initPeripheralInputFunction(
+        GPIO_UART_IMU_IOMUX_RX, GPIO_UART_IMU_IOMUX_RX_FUNC);
 
     DL_GPIO_initDigitalOutputFeatures(GPIO_BEEP_USER_BEEP_IOMUX,
 		 DL_GPIO_INVERSION_DISABLE, DL_GPIO_RESISTOR_PULL_DOWN,
@@ -383,7 +390,7 @@ SYSCONFIG_WEAK void SYSCFG_DL_ENCODER1A_init(void) {
  * timerClkFreq = (timerClkSrc / (timerClkDivRatio * (timerClkPrescale + 1)))
  *   10000000 Hz = 10000000 Hz / (8 * (0 + 1))
  */
-static const DL_TimerA_ClockConfig gENCODER2AClockConfig = {
+static const DL_TimerG_ClockConfig gENCODER2AClockConfig = {
     .clockSel    = DL_TIMER_CLOCK_BUSCLK,
     .divideRatio = DL_TIMER_CLOCK_DIVIDE_8,
     .prescale = 0U
@@ -393,7 +400,7 @@ static const DL_TimerA_ClockConfig gENCODER2AClockConfig = {
  * Timer load value (where the counter starts from) is calculated as (timerPeriod * timerClockFreq) - 1
  * ENCODER2A_INST_LOAD_VALUE = (1 ms * 10000000 Hz) - 1
  */
-static const DL_TimerA_CaptureConfig gENCODER2ACaptureConfig = {
+static const DL_TimerG_CaptureConfig gENCODER2ACaptureConfig = {
     .captureMode    = DL_TIMER_CAPTURE_MODE_EDGE_TIME,
     .period         = ENCODER2A_INST_LOAD_VALUE,
     .startTimer     = DL_TIMER_STOP,
@@ -404,14 +411,14 @@ static const DL_TimerA_CaptureConfig gENCODER2ACaptureConfig = {
 
 SYSCONFIG_WEAK void SYSCFG_DL_ENCODER2A_init(void) {
 
-    DL_TimerA_setClockConfig(ENCODER2A_INST,
-        (DL_TimerA_ClockConfig *) &gENCODER2AClockConfig);
+    DL_TimerG_setClockConfig(ENCODER2A_INST,
+        (DL_TimerG_ClockConfig *) &gENCODER2AClockConfig);
 
-    DL_TimerA_initCaptureMode(ENCODER2A_INST,
-        (DL_TimerA_CaptureConfig *) &gENCODER2ACaptureConfig);
-    DL_TimerA_enableInterrupt(ENCODER2A_INST , DL_TIMERA_INTERRUPT_CC0_DN_EVENT);
+    DL_TimerG_initCaptureMode(ENCODER2A_INST,
+        (DL_TimerG_CaptureConfig *) &gENCODER2ACaptureConfig);
+    DL_TimerG_enableInterrupt(ENCODER2A_INST , DL_TIMERG_INTERRUPT_CC0_DN_EVENT);
 
-    DL_TimerA_enableClock(ENCODER2A_INST);
+    DL_TimerG_enableClock(ENCODER2A_INST);
 
 }
 
@@ -491,6 +498,43 @@ SYSCONFIG_WEAK void SYSCFG_DL_UART_CAM_init(void)
 
     DL_UART_Main_enable(UART_CAM_INST);
 }
+static const DL_UART_Main_ClockConfig gUART_IMUClockConfig = {
+    .clockSel    = DL_UART_MAIN_CLOCK_MFCLK,
+    .divideRatio = DL_UART_MAIN_CLOCK_DIVIDE_RATIO_1
+};
+
+static const DL_UART_Main_Config gUART_IMUConfig = {
+    .mode        = DL_UART_MAIN_MODE_NORMAL,
+    .direction   = DL_UART_MAIN_DIRECTION_TX_RX,
+    .flowControl = DL_UART_MAIN_FLOW_CONTROL_NONE,
+    .parity      = DL_UART_MAIN_PARITY_NONE,
+    .wordLength  = DL_UART_MAIN_WORD_LENGTH_8_BITS,
+    .stopBits    = DL_UART_MAIN_STOP_BITS_ONE
+};
+
+SYSCONFIG_WEAK void SYSCFG_DL_UART_IMU_init(void)
+{
+    DL_UART_Main_setClockConfig(UART_IMU_INST, (DL_UART_Main_ClockConfig *) &gUART_IMUClockConfig);
+
+    DL_UART_Main_init(UART_IMU_INST, (DL_UART_Main_Config *) &gUART_IMUConfig);
+    /*
+     * Configure baud rate by setting oversampling and baud rate divisors.
+     *  Target baud rate: 115200
+     *  Actual baud rate: 115107.91
+     */
+    DL_UART_Main_setOversampling(UART_IMU_INST, DL_UART_OVERSAMPLING_RATE_16X);
+    DL_UART_Main_setBaudRateDivisor(UART_IMU_INST, UART_IMU_IBRD_4_MHZ_115200_BAUD, UART_IMU_FBRD_4_MHZ_115200_BAUD);
+
+
+    /* Configure Interrupts */
+    DL_UART_Main_enableInterrupt(UART_IMU_INST,
+                                 DL_UART_MAIN_INTERRUPT_DMA_DONE_RX);
+
+    /* Configure DMA Receive Event */
+    DL_UART_Main_enableDMAReceiveEvent(UART_IMU_INST, DL_UART_DMA_INTERRUPT_RX);
+
+    DL_UART_Main_enable(UART_IMU_INST);
+}
 
 static const DL_DMA_Config gDMA_UART0_RXConfig = {
     .transferMode   = DL_DMA_SINGLE_TRANSFER_MODE,
@@ -508,8 +552,25 @@ SYSCONFIG_WEAK void SYSCFG_DL_DMA_UART0_RX_init(void)
     DL_DMA_setTransferSize(DMA, DMA_UART0_RX_CHAN_ID, 8);
     DL_DMA_initChannel(DMA, DMA_UART0_RX_CHAN_ID , (DL_DMA_Config *) &gDMA_UART0_RXConfig);
 }
+static const DL_DMA_Config gDMA_IMU_RXConfig = {
+    .transferMode   = DL_DMA_SINGLE_TRANSFER_MODE,
+    .extendedMode   = DL_DMA_NORMAL_MODE,
+    .destIncrement  = DL_DMA_ADDR_INCREMENT,
+    .srcIncrement   = DL_DMA_ADDR_UNCHANGED,
+    .destWidth      = DL_DMA_WIDTH_BYTE,
+    .srcWidth       = DL_DMA_WIDTH_BYTE,
+    .trigger        = UART_IMU_INST_DMA_TRIGGER,
+    .triggerType    = DL_DMA_TRIGGER_TYPE_EXTERNAL,
+};
+
+SYSCONFIG_WEAK void SYSCFG_DL_DMA_IMU_RX_init(void)
+{
+    DL_DMA_setTransferSize(DMA, DMA_IMU_RX_CHAN_ID, 11);
+    DL_DMA_initChannel(DMA, DMA_IMU_RX_CHAN_ID , (DL_DMA_Config *) &gDMA_IMU_RXConfig);
+}
 SYSCONFIG_WEAK void SYSCFG_DL_DMA_init(void){
     SYSCFG_DL_DMA_UART0_RX_init();
+    SYSCFG_DL_DMA_IMU_RX_init();
 }
 
 

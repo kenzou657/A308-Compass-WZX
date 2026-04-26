@@ -25,6 +25,7 @@ const TIMER    = scripting.addModule("/ti/driverlib/TIMER", {}, false);
 const TIMER1   = TIMER.addInstance();
 const UART     = scripting.addModule("/ti/driverlib/UART", {}, false);
 const UART1    = UART.addInstance();
+const UART2    = UART.addInstance();
 
 /**
  * Write custom configuration values to the imported modules.
@@ -63,6 +64,7 @@ CAPTURE2.$name                              = "ENCODER2A";
 CAPTURE2.timerClkDiv                        = 8;
 CAPTURE2.timerPeriod                        = "1 ms";
 CAPTURE2.interrupts                         = ["CC0_DN"];
+CAPTURE2.peripheral.ccp0Pin.$assign         = "PA21";
 CAPTURE2.ccp0PinConfig.hideOutputInversion  = scripting.forceWrite(false);
 CAPTURE2.ccp0PinConfig.onlyInternalResistor = scripting.forceWrite(false);
 CAPTURE2.ccp0PinConfig.passedPeripheralType = scripting.forceWrite("Digital");
@@ -156,6 +158,28 @@ UART1.DMA_CHANNEL_RX.addressMode           = "f2b";
 UART1.DMA_CHANNEL_RX.$name                 = "DMA_UART0_RX";
 UART1.DMA_CHANNEL_RX.transferSize          = 8;
 
+UART2.$name                                = "UART_IMU";
+UART2.uartClkSrc                           = "MFCLK";
+UART2.targetBaudRate                       = 115200;
+UART2.enabledInterrupts                    = ["DMA_DONE_RX"];
+UART2.enabledDMARXTriggers                 = "DL_UART_DMA_INTERRUPT_RX";
+UART2.peripheral.$assign                   = "UART1";
+UART2.txPinConfig.$name                    = "ti_driverlib_gpio_GPIOPinGeneric6";
+UART2.txPinConfig.direction                = scripting.forceWrite("OUTPUT");
+UART2.txPinConfig.hideOutputInversion      = scripting.forceWrite(false);
+UART2.txPinConfig.onlyInternalResistor     = scripting.forceWrite(false);
+UART2.txPinConfig.passedPeripheralType     = scripting.forceWrite("Digital");
+UART2.rxPinConfig.$name                    = "ti_driverlib_gpio_GPIOPinGeneric7";
+UART2.rxPinConfig.hideOutputInversion      = scripting.forceWrite(false);
+UART2.rxPinConfig.onlyInternalResistor     = scripting.forceWrite(false);
+UART2.rxPinConfig.passedPeripheralType     = scripting.forceWrite("Digital");
+UART2.DMA_CHANNEL_RX.$name                 = "DMA_IMU_RX";
+UART2.DMA_CHANNEL_RX.addressMode           = "f2b";
+UART2.DMA_CHANNEL_RX.srcLength             = "BYTE";
+UART2.DMA_CHANNEL_RX.dstLength             = "BYTE";
+UART2.DMA_CHANNEL_RX.configureTransferSize = true;
+UART2.DMA_CHANNEL_RX.transferSize          = 11;
+
 /**
  * Pinmux solution for unlocked pins/peripherals. This ensures that minor changes to the automatic solver in a future
  * version of the tool will not impact the pinmux you originally saw.  These lines can be completely deleted in order to
@@ -165,8 +189,7 @@ CAPTURE1.peripheral.$suggestSolution             = "TIMG7";
 Board.peripheral.$suggestSolution                = "DEBUGSS";
 Board.peripheral.swclkPin.$suggestSolution       = "PA20";
 Board.peripheral.swdioPin.$suggestSolution       = "PA19";
-CAPTURE2.peripheral.$suggestSolution             = "TIMA1";
-CAPTURE2.peripheral.ccp0Pin.$suggestSolution     = "PA15";
+CAPTURE2.peripheral.$suggestSolution             = "TIMG6";
 GPIO1.associatedPins[0].pin.$suggestSolution     = "PA27";
 GPIO2.associatedPins[0].pin.$suggestSolution     = "PB27";
 GPIO3.associatedPins[0].pin.$suggestSolution     = "PA0";
@@ -180,4 +203,7 @@ TIMER1.peripheral.$suggestSolution               = "TIMA0";
 UART1.peripheral.$suggestSolution                = "UART0";
 UART1.peripheral.rxPin.$suggestSolution          = "PA11";
 UART1.peripheral.txPin.$suggestSolution          = "PA10";
-UART1.DMA_CHANNEL_RX.peripheral.$suggestSolution = "DMA_CH0";
+UART1.DMA_CHANNEL_RX.peripheral.$suggestSolution = "DMA_CH1";
+UART2.peripheral.rxPin.$suggestSolution          = "PA18";
+UART2.peripheral.txPin.$suggestSolution          = "PA17";
+UART2.DMA_CHANNEL_RX.peripheral.$suggestSolution = "DMA_CH0";

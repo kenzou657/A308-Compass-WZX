@@ -117,15 +117,15 @@ bool SYSCFG_DL_SYSCTL_SYSPLL_init(void);
 #define GPIO_ENCODER1A_C0_IOMUX_FUNC                 IOMUX_PINCM53_PF_TIMG7_CCP0
 
 /* Defines for ENCODER2A */
-#define ENCODER2A_INST                                                   (TIMA1)
-#define ENCODER2A_INST_IRQHandler                               TIMA1_IRQHandler
-#define ENCODER2A_INST_INT_IRQN                                 (TIMA1_INT_IRQn)
+#define ENCODER2A_INST                                                   (TIMG6)
+#define ENCODER2A_INST_IRQHandler                               TIMG6_IRQHandler
+#define ENCODER2A_INST_INT_IRQN                                 (TIMG6_INT_IRQn)
 #define ENCODER2A_INST_LOAD_VALUE                                        (9999U)
 /* GPIO defines for channel 0 */
 #define GPIO_ENCODER2A_C0_PORT                                             GPIOA
-#define GPIO_ENCODER2A_C0_PIN                                     DL_GPIO_PIN_15
-#define GPIO_ENCODER2A_C0_IOMUX                                  (IOMUX_PINCM37)
-#define GPIO_ENCODER2A_C0_IOMUX_FUNC                 IOMUX_PINCM37_PF_TIMA1_CCP0
+#define GPIO_ENCODER2A_C0_PIN                                     DL_GPIO_PIN_21
+#define GPIO_ENCODER2A_C0_IOMUX                                  (IOMUX_PINCM46)
+#define GPIO_ENCODER2A_C0_IOMUX_FUNC                 IOMUX_PINCM46_PF_TIMG6_CCP0
 
 
 
@@ -155,14 +155,33 @@ bool SYSCFG_DL_SYSCTL_SYSPLL_init(void);
 #define UART_CAM_BAUD_RATE                                                (9600)
 #define UART_CAM_IBRD_4_MHZ_9600_BAUD                                       (26)
 #define UART_CAM_FBRD_4_MHZ_9600_BAUD                                        (3)
+/* Defines for UART_IMU */
+#define UART_IMU_INST                                                      UART1
+#define UART_IMU_INST_FREQUENCY                                          4000000
+#define UART_IMU_INST_IRQHandler                                UART1_IRQHandler
+#define UART_IMU_INST_INT_IRQN                                    UART1_INT_IRQn
+#define GPIO_UART_IMU_RX_PORT                                              GPIOA
+#define GPIO_UART_IMU_TX_PORT                                              GPIOA
+#define GPIO_UART_IMU_RX_PIN                                      DL_GPIO_PIN_18
+#define GPIO_UART_IMU_TX_PIN                                      DL_GPIO_PIN_17
+#define GPIO_UART_IMU_IOMUX_RX                                   (IOMUX_PINCM40)
+#define GPIO_UART_IMU_IOMUX_TX                                   (IOMUX_PINCM39)
+#define GPIO_UART_IMU_IOMUX_RX_FUNC                    IOMUX_PINCM40_PF_UART1_RX
+#define GPIO_UART_IMU_IOMUX_TX_FUNC                    IOMUX_PINCM39_PF_UART1_TX
+#define UART_IMU_BAUD_RATE                                              (115200)
+#define UART_IMU_IBRD_4_MHZ_115200_BAUD                                      (2)
+#define UART_IMU_FBRD_4_MHZ_115200_BAUD                                     (11)
 
 
 
 
 
 /* Defines for DMA_UART0_RX */
-#define DMA_UART0_RX_CHAN_ID                                                 (0)
+#define DMA_UART0_RX_CHAN_ID                                                 (1)
 #define UART_CAM_INST_DMA_TRIGGER                            (DMA_UART0_RX_TRIG)
+/* Defines for DMA_IMU_RX */
+#define DMA_IMU_RX_CHAN_ID                                                   (0)
+#define UART_IMU_INST_DMA_TRIGGER                            (DMA_UART1_RX_TRIG)
 
 
 /* Port definition for Pin Group GPIO_BEEP */
@@ -218,6 +237,7 @@ void SYSCFG_DL_ENCODER1A_init(void);
 void SYSCFG_DL_ENCODER2A_init(void);
 void SYSCFG_DL_CLOCK_init(void);
 void SYSCFG_DL_UART_CAM_init(void);
+void SYSCFG_DL_UART_IMU_init(void);
 void SYSCFG_DL_DMA_init(void);
 
 void SYSCFG_DL_SYSTICK_init(void);
