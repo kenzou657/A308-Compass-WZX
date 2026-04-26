@@ -1,0 +1,16 @@
+/*
+ * SysConfig 生成文件
+ * 
+ * 本目录包含 SysConfig 自动生成的配置文件。
+ * 这些文件由 SysConfig 工具生成，不应手动编辑。
+ * 
+ * 文件列表:
+ * - ti_msp_dl_config.c    : SysConfig 生成的初始化代码
+ * - ti_msp_dl_config.h    : SysConfig 生成的配置头文件
+ * 
+ * 注意事项:
+ * 1. 不要手动编辑这些文件
+ * 2. 修改 SysConfig 配置后，需要重新生成这些文件
+ * 3. 在 Keil 中，BeforeMake Hook 会自动运行 syscfg.bat 生成这些文件
+ * 4. 如果配置不生效，尝试在 Keil 中手动运行 SysConfig
+ */

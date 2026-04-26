@@ -1,0 +1,8 @@
+/*
+ * 工具脚本
+ * 
+ * 本目录包含构建和配置工具脚本。
+ * 
+ * 脚本列表:
+ * - keil/syscfg.bat       : SysConfig 生成脚本（由 Keil BeforeMake Hook 调用）
+ */
