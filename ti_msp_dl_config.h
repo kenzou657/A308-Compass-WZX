@@ -117,27 +117,52 @@ bool SYSCFG_DL_SYSCTL_SYSPLL_init(void);
 #define GPIO_ENCODER1A_C0_IOMUX_FUNC                 IOMUX_PINCM53_PF_TIMG7_CCP0
 
 /* Defines for ENCODER2A */
-#define ENCODER2A_INST                                                   (TIMA0)
-#define ENCODER2A_INST_IRQHandler                               TIMA0_IRQHandler
-#define ENCODER2A_INST_INT_IRQN                                 (TIMA0_INT_IRQn)
+#define ENCODER2A_INST                                                   (TIMA1)
+#define ENCODER2A_INST_IRQHandler                               TIMA1_IRQHandler
+#define ENCODER2A_INST_INT_IRQN                                 (TIMA1_INT_IRQn)
 #define ENCODER2A_INST_LOAD_VALUE                                        (9999U)
 /* GPIO defines for channel 0 */
 #define GPIO_ENCODER2A_C0_PORT                                             GPIOA
-#define GPIO_ENCODER2A_C0_PIN                                     DL_GPIO_PIN_21
-#define GPIO_ENCODER2A_C0_IOMUX                                  (IOMUX_PINCM46)
-#define GPIO_ENCODER2A_C0_IOMUX_FUNC                 IOMUX_PINCM46_PF_TIMA0_CCP0
+#define GPIO_ENCODER2A_C0_PIN                                     DL_GPIO_PIN_15
+#define GPIO_ENCODER2A_C0_IOMUX                                  (IOMUX_PINCM37)
+#define GPIO_ENCODER2A_C0_IOMUX_FUNC                 IOMUX_PINCM37_PF_TIMA1_CCP0
 
 
 
 
 
 /* Defines for CLOCK */
-#define CLOCK_INST                                                       (TIMA1)
-#define CLOCK_INST_IRQHandler                                   TIMA1_IRQHandler
-#define CLOCK_INST_INT_IRQN                                     (TIMA1_INT_IRQn)
+#define CLOCK_INST                                                       (TIMA0)
+#define CLOCK_INST_IRQHandler                                   TIMA0_IRQHandler
+#define CLOCK_INST_INT_IRQN                                     (TIMA0_INT_IRQn)
 #define CLOCK_INST_LOAD_VALUE                                             (999U)
 
 
+
+/* Defines for UART_CAM */
+#define UART_CAM_INST                                                      UART0
+#define UART_CAM_INST_FREQUENCY                                          4000000
+#define UART_CAM_INST_IRQHandler                                UART0_IRQHandler
+#define UART_CAM_INST_INT_IRQN                                    UART0_INT_IRQn
+#define GPIO_UART_CAM_RX_PORT                                              GPIOA
+#define GPIO_UART_CAM_TX_PORT                                              GPIOA
+#define GPIO_UART_CAM_RX_PIN                                      DL_GPIO_PIN_11
+#define GPIO_UART_CAM_TX_PIN                                      DL_GPIO_PIN_10
+#define GPIO_UART_CAM_IOMUX_RX                                   (IOMUX_PINCM22)
+#define GPIO_UART_CAM_IOMUX_TX                                   (IOMUX_PINCM21)
+#define GPIO_UART_CAM_IOMUX_RX_FUNC                    IOMUX_PINCM22_PF_UART0_RX
+#define GPIO_UART_CAM_IOMUX_TX_FUNC                    IOMUX_PINCM21_PF_UART0_TX
+#define UART_CAM_BAUD_RATE                                                (9600)
+#define UART_CAM_IBRD_4_MHZ_9600_BAUD                                       (26)
+#define UART_CAM_FBRD_4_MHZ_9600_BAUD                                        (3)
+
+
+
+
+
+/* Defines for DMA_UART0_RX */
+#define DMA_UART0_RX_CHAN_ID                                                 (0)
+#define UART_CAM_INST_DMA_TRIGGER                            (DMA_UART0_RX_TRIG)
 
 
 /* Port definition for Pin Group GPIO_BEEP */
@@ -192,6 +217,8 @@ void SYSCFG_DL_PWM_MOTOR_init(void);
 void SYSCFG_DL_ENCODER1A_init(void);
 void SYSCFG_DL_ENCODER2A_init(void);
 void SYSCFG_DL_CLOCK_init(void);
+void SYSCFG_DL_UART_CAM_init(void);
+void SYSCFG_DL_DMA_init(void);
 
 void SYSCFG_DL_SYSTICK_init(void);
 
