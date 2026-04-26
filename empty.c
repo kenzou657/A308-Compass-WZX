@@ -31,11 +31,36 @@
  */
 
 #include "ti_msp_dl_config.h"
+#include <stdint.h>
+#include "timer.h"
+#include "drv_buzzer.h"
+#include "drv_led.h"
+
+// 变量创建区
+volatile uint32_t uwTick_Motor_Set_Point = 0;   // 控制Motor_Proc的执行速度
+
+// 子函数声明区
+void Motor_Proc(void);
 
 int main(void)
 {
     SYSCFG_DL_init();
 
     while (1) {
+        Motor_Proc();
+        beep_1s_process(); 
     }
+}
+
+// 电机减速任务函数
+void Motor_Proc(void)
+{
+    if ((uwTick - uwTick_Motor_Set_Point) < 3000) {
+        return;
+    }
+    uwTick_Motor_Set_Point = uwTick;
+
+    // 电机控制逻辑在此处添加
+    beep_1s_start();
+    LEDG_TOGGLE();
 }

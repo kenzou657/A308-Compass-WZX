@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define>__MSPM0G3507__</Define>
               <Undefine></Undefine>
-              <IncludePath>..\..\source\third_party\CMSIS\Core\Include;..\..\source</IncludePath>
+              <IncludePath>..\..\source\third_party\CMSIS\Core\Include;..\..\source;..\src;..\src\config;..\src\drivers;..\src\app;..\src\utils;..\src\isr;..\</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -385,29 +385,104 @@
           <GroupName>Source</GroupName>
           <Files>
             <File>
-              <FileName>empty.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../empty.c</FilePath>
-            </File>
-            <File>
-              <FileName>empty.syscfg</FileName>
-              <FileType>5</FileType>
-              <FilePath>../empty.syscfg</FilePath>
-            </File>
-            <File>
               <FileName>startup_mspm0g350x_uvision.s</FileName>
               <FileType>2</FileType>
               <FilePath>startup_mspm0g350x_uvision.s</FilePath>
             </File>
             <File>
-              <FileName>ti_msp_dl_config.h</FileName>
+              <FileName>config.h</FileName>
               <FileType>5</FileType>
-              <FilePath>../ti_msp_dl_config.h</FilePath>
+              <FilePath>..\src\config.h</FilePath>
             </File>
+            <File>
+              <FileName>empty.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\empty.c</FilePath>
+            </File>
+            <File>
+              <FileName>empty.syscfg</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\empty.syscfg</FilePath>
+              <FileOption>
+                <CommonProperty>
+                  <UseCPPCompiler>2</UseCPPCompiler>
+                  <RVCTCodeConst>0</RVCTCodeConst>
+                  <RVCTZI>0</RVCTZI>
+                  <RVCTOtherData>0</RVCTOtherData>
+                  <ModuleSelection>0</ModuleSelection>
+                  <IncludeInBuild>0</IncludeInBuild>
+                  <AlwaysBuild>2</AlwaysBuild>
+                  <GenerateAssemblyFile>2</GenerateAssemblyFile>
+                  <AssembleAssemblyFile>2</AssembleAssemblyFile>
+                  <PublicsOnly>2</PublicsOnly>
+                  <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
+                  <ComprImg>1</ComprImg>
+                </CommonProperty>
+                <FileArmAds/>
+              </FileOption>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>app</GroupName>
+        </Group>
+        <Group>
+          <GroupName>config</GroupName>
+          <Files>
             <File>
               <FileName>ti_msp_dl_config.c</FileName>
               <FileType>1</FileType>
-              <FilePath>../ti_msp_dl_config.c</FilePath>
+              <FilePath>..\ti_msp_dl_config.c</FilePath>
+            </File>
+            <File>
+              <FileName>ti_msp_dl_config.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\ti_msp_dl_config.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>drivers</GroupName>
+          <Files>
+            <File>
+              <FileName>drv_buzzer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\src\drivers\drv_buzzer.c</FilePath>
+            </File>
+            <File>
+              <FileName>drv_buzzer.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\src\drivers\drv_buzzer.h</FilePath>
+            </File>
+            <File>
+              <FileName>drv_led.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\src\drivers\drv_led.c</FilePath>
+            </File>
+            <File>
+              <FileName>drv_led.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\src\drivers\drv_led.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>isr</GroupName>
+        </Group>
+        <Group>
+          <GroupName>utils</GroupName>
+          <Files>
+            <File>
+              <FileName>timer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\src\utils\timer.c</FilePath>
+            </File>
+            <File>
+              <FileName>timer.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\src\utils\timer.h</FilePath>
             </File>
           </Files>
         </Group>
