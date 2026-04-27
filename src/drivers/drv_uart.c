@@ -69,26 +69,27 @@ void uart_isr_handler(void)
             // 当前 DMA 写入位置（刚写完的 8 字节的起始位置）
             uint16_t current_write_pos = g_uart_rx.write_pos;
             
-            // 流式扫描：在最近 16 字节范围内搜索帧头
-            // 搜索范围：[write_pos-8, write_pos+7]（环形）
+            // 流式扫描：在最近 24 字节范围内搜索帧头
+            // 搜索范围：[write_pos-12, write_pos+11]（环形）
             // 这样可以处理帧边界跨越 DMA 传输边界的情况
             uint8_t frame_found = 0;
             
-            for (int offset = 0; offset <= 8; offset++) {
+            for (int offset = 0; offset <= 12; offset++) {
                 // 计算帧头可能的起始位置（环形索引）
                 uint16_t frame_start = (current_write_pos + offset) % UART_RX_BUFFER_SIZE;
                 
                 // 计算帧内各字节的环形索引
                 uint16_t idx0 = frame_start;
                 uint16_t idx1 = (frame_start + 1) % UART_RX_BUFFER_SIZE;
-                uint16_t idx6 = (frame_start + 6) % UART_RX_BUFFER_SIZE;
-                uint16_t idx7 = (frame_start + 7) % UART_RX_BUFFER_SIZE;
+                uint16_t idx10 = (frame_start + 10) % UART_RX_BUFFER_SIZE;
+                uint16_t idx11 = (frame_start + 11) % UART_RX_BUFFER_SIZE;
                 
                 // 验证帧头帧尾
-                if (g_uart_rx.buffer[idx0] == FRAME_HEADER_1 && 
+                // 帧格式：[AA 55] [数据 8 字节] [0D 0A]
+                if (g_uart_rx.buffer[idx0] == FRAME_HEADER_1 &&
                     g_uart_rx.buffer[idx1] == FRAME_HEADER_2 &&
-                    g_uart_rx.buffer[idx6] == FRAME_TAIL_1 && 
-                    g_uart_rx.buffer[idx7] == FRAME_TAIL_2) {
+                    g_uart_rx.buffer[idx10] == FRAME_TAIL_1 &&
+                    g_uart_rx.buffer[idx11] == FRAME_TAIL_2) {
                     
                     // 找到有效帧，复制到 frame_data
                     for (int i = 0; i < UART_FRAME_SIZE; i++) {
@@ -113,7 +114,7 @@ void uart_isr_handler(void)
             // 更新写入位置（环形）
             g_uart_rx.write_pos = (g_uart_rx.write_pos + UART_DMA_TRANSFER_SIZE) % UART_RX_BUFFER_SIZE;
             
-            // 重新配置 DMA 接收下一个 8 字节
+            // 重新配置 DMA 接收下一个 12 字节
             DL_DMA_setDestAddr(DMA, DMA_UART0_RX_CHAN_ID, 
                               (uint32_t)&g_uart_rx.buffer[g_uart_rx.write_pos]);
             DL_DMA_setTransferSize(DMA, DMA_UART0_RX_CHAN_ID, UART_DMA_TRANSFER_SIZE);
@@ -142,8 +143,8 @@ int uart_get_frame(uint8_t *buffer, uint16_t *len)
     }
     
     // 提取数据部分（跳过帧头，去掉帧尾）
-    // 帧格式：[AA 55] [数据 4 字节] [0D 0A]
-    uint16_t data_len = UART_FRAME_SIZE - 4;  // 8 - 2(帧头) - 2(帧尾) = 4
+    // 帧格式：[AA 55] [数据 8 字节] [0D 0A]
+    uint16_t data_len = UART_FRAME_SIZE - 4;  // 12 - 2(帧头) - 2(帧尾) = 8
     
     if (data_len > 0) {
         memcpy(buffer, &g_uart_rx.frame_data[2], data_len);

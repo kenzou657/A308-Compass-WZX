@@ -518,6 +518,16 @@
               <FileType>5</FileType>
               <FilePath>..\src\app\app_task_manager.h</FilePath>
             </File>
+            <File>
+              <FileName>app_camera_uart.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\src\app\app_camera_uart.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_camera_uart.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\src\app\app_camera_uart.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

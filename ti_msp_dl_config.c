@@ -549,7 +549,7 @@ static const DL_DMA_Config gDMA_UART0_RXConfig = {
 
 SYSCONFIG_WEAK void SYSCFG_DL_DMA_UART0_RX_init(void)
 {
-    DL_DMA_setTransferSize(DMA, DMA_UART0_RX_CHAN_ID, 8);
+    DL_DMA_setTransferSize(DMA, DMA_UART0_RX_CHAN_ID, 12);
     DL_DMA_initChannel(DMA, DMA_UART0_RX_CHAN_ID , (DL_DMA_Config *) &gDMA_UART0_RXConfig);
 }
 static const DL_DMA_Config gDMA_IMU_RXConfig = {

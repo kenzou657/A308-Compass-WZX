@@ -35,24 +35,40 @@
 #include "timer.h"
 #include "drv_buzzer.h"
 #include "drv_led.h"
+#include "drv_uart.h"
+#include "app_camera_uart.h"
 
-// 变量创建区
-volatile uint32_t uwTick_Motor_Set_Point = 0;   // 控制Motor_Proc的执行速度
+// ============ 变量创建区 ============
+volatile uint32_t uwTick_Motor_Set_Point = 0;   // 控制 Motor_Proc 的执行速度
+volatile uint32_t uwTick_Camera_Set_Point = 0;  // 控制 Camera_Proc 的执行速度
 
-// 子函数声明区
+// ============ 子函数声明区 ============
 void Motor_Proc(void);
+void Camera_Proc(void);
 
 int main(void)
 {
     SYSCFG_DL_init();
+    
+    // 初始化串口驱动
+    uart_init();
+    
+    // 初始化摄像头通信模块
+    camera_uart_init();
 
     while (1) {
         Motor_Proc();
-        beep_1s_process(); 
+        Camera_Proc();
+        // beep_1s_process();
     }
 }
 
-// 电机减速任务函数
+// ============ 电机减速任务函数 ============
+/**
+ * @brief 电机处理函数（减速调用）
+ *
+ * 执行周期：3000ms
+ */
 void Motor_Proc(void)
 {
     if ((uwTick - uwTick_Motor_Set_Point) < 3000) {
@@ -61,6 +77,48 @@ void Motor_Proc(void)
     uwTick_Motor_Set_Point = uwTick;
 
     // 电机控制逻辑在此处添加
-    beep_1s_start();
+    // beep_1s_start();
     LEDG_TOGGLE();
+}
+
+// ============ 摄像头通信减速函数 ============
+/**
+ * @brief 摄像头通信处理函数（减速调用）
+ *
+ * 执行周期：100ms
+ * 功能：
+ * - 获取摄像头接收到的数据
+ * - 处理摄像头命令
+ * - 更新调试数据，便于断点观察
+ * 
+ * 注意：摄像头接收使用中断处理，无需减速函数
+ *      接收数据通过 camera_uart_rx_callback() 在中断中解析
+ */
+void Camera_Proc(void)
+{
+    // 减速控制：每 100ms 执行一次
+    if ((uwTick - uwTick_Camera_Set_Point) < 100) {
+        return;
+    }
+    uwTick_Camera_Set_Point = uwTick;
+    
+    // 获取最新接收的摄像头数据
+    camera_frame_data_t frame;
+    if (camera_uart_get_rx_frame(&frame) == 0) {
+        // 成功获取摄像头数据
+        // 此处可添加数据处理逻辑
+        // 例如：根据 Mode 和 ID 进行相应的控制
+        
+        // 示例：根据工作模式处理
+        if (frame.mode == CAMERA_MODE_LINE_TRACKING) {
+            // 寻线模式处理
+            // 使用 frame.data_x 和 frame.data_y 进行控制
+        } else if (frame.mode == CAMERA_MODE_DIGIT_RECOG) {
+            // 数字识别模式处理
+            // 使用 frame.id 获取识别的数字
+        }
+    }
+    
+    // 此处可添加定期发送命令到摄像头的逻辑
+    // 例如：camera_uart_send_frame(mode, id, data_x, data_y);
 }

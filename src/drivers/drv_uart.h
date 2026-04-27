@@ -5,10 +5,10 @@
 #include <string.h>
 
 /* ============ UART 配置常量 ============ */
-#define UART_FRAME_SIZE         8           // 固定帧长（包含帧头帧尾）
-#define UART_RX_BUFFER_SIZE     128         // 环形接收缓冲大小
-#define UART_DMA_TRANSFER_SIZE  8           // DMA 每次传输大小
-#define UART_TX_BUFFER_SIZE     128         // 发送缓冲大小
+#define UART_FRAME_SIZE         12          // 固定帧长（包含帧头帧尾）
+#define UART_RX_BUFFER_SIZE     144         // 环形接收缓冲大小
+#define UART_DMA_TRANSFER_SIZE  12          // DMA 每次传输大小
+#define UART_TX_BUFFER_SIZE     144         // 发送缓冲大小
 
 /* 帧格式定义 */
 #define FRAME_HEADER_1          0xAA        // 帧头第一字节
