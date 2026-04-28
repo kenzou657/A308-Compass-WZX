@@ -139,22 +139,6 @@ bool SYSCFG_DL_SYSCTL_SYSPLL_init(void);
 
 
 
-
-/* Defines for I2C_OLED */
-#define I2C_OLED_INST                                                       I2C1
-#define I2C_OLED_INST_IRQHandler                                 I2C1_IRQHandler
-#define I2C_OLED_INST_INT_IRQN                                     I2C1_INT_IRQn
-#define I2C_OLED_BUS_SPEED_HZ                                             100000
-#define GPIO_I2C_OLED_SDA_PORT                                             GPIOA
-#define GPIO_I2C_OLED_SDA_PIN                                     DL_GPIO_PIN_30
-#define GPIO_I2C_OLED_IOMUX_SDA                                   (IOMUX_PINCM5)
-#define GPIO_I2C_OLED_IOMUX_SDA_FUNC                    IOMUX_PINCM5_PF_I2C1_SDA
-#define GPIO_I2C_OLED_SCL_PORT                                             GPIOA
-#define GPIO_I2C_OLED_SCL_PIN                                     DL_GPIO_PIN_29
-#define GPIO_I2C_OLED_IOMUX_SCL                                   (IOMUX_PINCM4)
-#define GPIO_I2C_OLED_IOMUX_SCL_FUNC                    IOMUX_PINCM4_PF_I2C1_SCL
-
-
 /* Defines for UART_CAM */
 #define UART_CAM_INST                                                      UART0
 #define UART_CAM_INST_FREQUENCY                                          4000000
@@ -179,16 +163,35 @@ bool SYSCFG_DL_SYSCTL_SYSPLL_init(void);
 #define GPIO_UART_IMU_RX_PORT                                              GPIOA
 #define GPIO_UART_IMU_TX_PORT                                              GPIOA
 #define GPIO_UART_IMU_RX_PIN                                      DL_GPIO_PIN_18
-#define GPIO_UART_IMU_TX_PIN                                      DL_GPIO_PIN_17
+#define GPIO_UART_IMU_TX_PIN                                       DL_GPIO_PIN_8
 #define GPIO_UART_IMU_IOMUX_RX                                   (IOMUX_PINCM40)
-#define GPIO_UART_IMU_IOMUX_TX                                   (IOMUX_PINCM39)
+#define GPIO_UART_IMU_IOMUX_TX                                   (IOMUX_PINCM19)
 #define GPIO_UART_IMU_IOMUX_RX_FUNC                    IOMUX_PINCM40_PF_UART1_RX
-#define GPIO_UART_IMU_IOMUX_TX_FUNC                    IOMUX_PINCM39_PF_UART1_TX
+#define GPIO_UART_IMU_IOMUX_TX_FUNC                    IOMUX_PINCM19_PF_UART1_TX
 #define UART_IMU_BAUD_RATE                                              (115200)
 #define UART_IMU_IBRD_4_MHZ_115200_BAUD                                      (2)
 #define UART_IMU_FBRD_4_MHZ_115200_BAUD                                     (11)
 
 
+
+
+/* Defines for SPI_OLED */
+#define SPI_OLED_INST                                                      SPI1
+#define SPI_OLED_INST_IRQHandler                                SPI1_IRQHandler
+#define SPI_OLED_INST_INT_IRQN                                    SPI1_INT_IRQn
+#define GPIO_SPI_OLED_PICO_PORT                                           GPIOB
+#define GPIO_SPI_OLED_PICO_PIN                                   DL_GPIO_PIN_15
+#define GPIO_SPI_OLED_IOMUX_PICO                                (IOMUX_PINCM32)
+#define GPIO_SPI_OLED_IOMUX_PICO_FUNC                IOMUX_PINCM32_PF_SPI1_PICO
+#define GPIO_SPI_OLED_POCI_PORT                                           GPIOB
+#define GPIO_SPI_OLED_POCI_PIN                                   DL_GPIO_PIN_14
+#define GPIO_SPI_OLED_IOMUX_POCI                                (IOMUX_PINCM31)
+#define GPIO_SPI_OLED_IOMUX_POCI_FUNC                IOMUX_PINCM31_PF_SPI1_POCI
+/* GPIO configuration for SPI_OLED */
+#define GPIO_SPI_OLED_SCLK_PORT                                           GPIOA
+#define GPIO_SPI_OLED_SCLK_PIN                                   DL_GPIO_PIN_17
+#define GPIO_SPI_OLED_IOMUX_SCLK                                (IOMUX_PINCM39)
+#define GPIO_SPI_OLED_IOMUX_SCLK_FUNC                IOMUX_PINCM39_PF_SPI1_SCLK
 
 
 
@@ -236,6 +239,30 @@ bool SYSCFG_DL_SYSCTL_SYSPLL_init(void);
 /* Defines for ENCODER2B: GPIOA.22 with pinCMx 47 on package pin 18 */
 #define GPIO_ENCODER_ENCODER2B_PIN                              (DL_GPIO_PIN_22)
 #define GPIO_ENCODER_ENCODER2B_IOMUX                             (IOMUX_PINCM47)
+/* Port definition for Pin Group GPIO_KEYS */
+#define GPIO_KEYS_PORT                                                   (GPIOB)
+
+/* Defines for K1: GPIOB.21 with pinCMx 49 on package pin 20 */
+#define GPIO_KEYS_K1_PIN                                        (DL_GPIO_PIN_21)
+#define GPIO_KEYS_K1_IOMUX                                       (IOMUX_PINCM49)
+/* Defines for K2: GPIOB.23 with pinCMx 51 on package pin 22 */
+#define GPIO_KEYS_K2_PIN                                        (DL_GPIO_PIN_23)
+#define GPIO_KEYS_K2_IOMUX                                       (IOMUX_PINCM51)
+/* Defines for K3: GPIOB.24 with pinCMx 52 on package pin 23 */
+#define GPIO_KEYS_K3_PIN                                        (DL_GPIO_PIN_24)
+#define GPIO_KEYS_K3_IOMUX                                       (IOMUX_PINCM52)
+/* Port definition for Pin Group OLED */
+#define OLED_PORT                                                        (GPIOB)
+
+/* Defines for RES: GPIOB.16 with pinCMx 33 on package pin 4 */
+#define OLED_RES_PIN                                            (DL_GPIO_PIN_16)
+#define OLED_RES_IOMUX                                           (IOMUX_PINCM33)
+/* Defines for DC: GPIOB.17 with pinCMx 43 on package pin 14 */
+#define OLED_DC_PIN                                             (DL_GPIO_PIN_17)
+#define OLED_DC_IOMUX                                            (IOMUX_PINCM43)
+/* Defines for CS: GPIOB.20 with pinCMx 48 on package pin 19 */
+#define OLED_CS_PIN                                             (DL_GPIO_PIN_20)
+#define OLED_CS_IOMUX                                            (IOMUX_PINCM48)
 
 
 
@@ -252,9 +279,9 @@ void SYSCFG_DL_PWM_MOTOR_init(void);
 void SYSCFG_DL_ENCODER1A_init(void);
 void SYSCFG_DL_ENCODER2A_init(void);
 void SYSCFG_DL_CLOCK_init(void);
-void SYSCFG_DL_I2C_OLED_init(void);
 void SYSCFG_DL_UART_CAM_init(void);
 void SYSCFG_DL_UART_IMU_init(void);
+void SYSCFG_DL_SPI_OLED_init(void);
 void SYSCFG_DL_DMA_init(void);
 
 void SYSCFG_DL_SYSTICK_init(void);

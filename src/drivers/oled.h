@@ -8,17 +8,16 @@ typedef uint32_t u32;
 typedef uint16_t u16;
 typedef uint8_t u8;
 
-//-----------------OLED端口定义---------------- 
+//-----------------OLED端口定义----------------
 
-// #define OLED_SCL_Clr() GPIO_ResetBits(GPIOA,GPIO_Pin_0)//SCL
-// #define OLED_SCL_Set() GPIO_SetBits(GPIOA,GPIO_Pin_0)
+#define OLED_RES_Clr()  DL_GPIO_clearPins(OLED_PORT,OLED_RES_PIN)//RES
+#define OLED_RES_Set()  DL_GPIO_setPins(OLED_PORT,OLED_RES_PIN)
 
-// #define OLED_SDA_Clr() GPIO_ResetBits(GPIOA,GPIO_Pin_1)//DIN
-// #define OLED_SDA_Set() GPIO_SetBits(GPIOA,GPIO_Pin_1)
+#define OLED_DC_Clr()   DL_GPIO_clearPins(OLED_PORT,OLED_DC_PIN)//DC
+#define OLED_DC_Set()   DL_GPIO_setPins(OLED_PORT,OLED_DC_PIN)
 
-// #define OLED_RES_Clr() GPIO_ResetBits(GPIOA,GPIO_Pin_2)//RES
-// #define OLED_RES_Set() GPIO_SetBits(GPIOA,GPIO_Pin_2)
-
+#define OLED_CS_Clr()   DL_GPIO_clearPins(OLED_PORT,OLED_CS_PIN)//CS
+#define OLED_CS_Set()   DL_GPIO_setPins(OLED_PORT,OLED_CS_PIN)
 
 #define OLED_CMD  0	//写命令
 #define OLED_DATA 1	//写数据
@@ -26,7 +25,7 @@ typedef uint8_t u8;
 void OLED_ClearPoint(u8 x,u8 y);
 void OLED_ColorTurn(u8 i);
 void OLED_DisplayTurn(u8 i);
-void OLED_WR_Byte(u8 dat,u8 mode);
+void OLED_WR_Byte(u8 dat,u8 cmd);
 void OLED_DisPlay_On(void);
 void OLED_DisPlay_Off(void);
 void OLED_Refresh(void);

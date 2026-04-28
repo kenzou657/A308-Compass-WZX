@@ -528,6 +528,16 @@
               <FileType>5</FileType>
               <FilePath>..\src\app\app_camera_uart.h</FilePath>
             </File>
+            <File>
+              <FileName>key_logic.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\src\app\key_logic.c</FilePath>
+            </File>
+            <File>
+              <FileName>key_logic.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\src\app\key_logic.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -612,6 +622,16 @@
               <FileName>oledfont.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\src\drivers\oledfont.h</FilePath>
+            </File>
+            <File>
+              <FileName>drv_key.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\src\drivers\drv_key.c</FilePath>
+            </File>
+            <File>
+              <FileName>drv_key.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\src\drivers\drv_key.h</FilePath>
             </File>
           </Files>
         </Group>
