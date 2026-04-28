@@ -58,6 +58,7 @@ SYSCONFIG_WEAK void SYSCFG_DL_init(void)
     SYSCFG_DL_ENCODER1A_init();
     SYSCFG_DL_ENCODER2A_init();
     SYSCFG_DL_CLOCK_init();
+    SYSCFG_DL_I2C_OLED_init();
     SYSCFG_DL_UART_CAM_init();
     SYSCFG_DL_UART_IMU_init();
     SYSCFG_DL_DMA_init();
@@ -105,6 +106,7 @@ SYSCONFIG_WEAK void SYSCFG_DL_initPower(void)
     DL_TimerG_reset(ENCODER1A_INST);
     DL_TimerG_reset(ENCODER2A_INST);
     DL_TimerA_reset(CLOCK_INST);
+    DL_I2C_reset(I2C_OLED_INST);
     DL_UART_Main_reset(UART_CAM_INST);
     DL_UART_Main_reset(UART_IMU_INST);
 
@@ -116,6 +118,7 @@ SYSCONFIG_WEAK void SYSCFG_DL_initPower(void)
     DL_TimerG_enablePower(ENCODER1A_INST);
     DL_TimerG_enablePower(ENCODER2A_INST);
     DL_TimerA_enablePower(CLOCK_INST);
+    DL_I2C_enablePower(I2C_OLED_INST);
     DL_UART_Main_enablePower(UART_CAM_INST);
     DL_UART_Main_enablePower(UART_IMU_INST);
 
@@ -133,6 +136,17 @@ SYSCONFIG_WEAK void SYSCFG_DL_GPIO_init(void)
 
     DL_GPIO_initPeripheralInputFunction(GPIO_ENCODER1A_C0_IOMUX,GPIO_ENCODER1A_C0_IOMUX_FUNC);
     DL_GPIO_initPeripheralInputFunction(GPIO_ENCODER2A_C0_IOMUX,GPIO_ENCODER2A_C0_IOMUX_FUNC);
+
+    DL_GPIO_initPeripheralInputFunctionFeatures(GPIO_I2C_OLED_IOMUX_SDA,
+        GPIO_I2C_OLED_IOMUX_SDA_FUNC, DL_GPIO_INVERSION_DISABLE,
+        DL_GPIO_RESISTOR_NONE, DL_GPIO_HYSTERESIS_DISABLE,
+        DL_GPIO_WAKEUP_DISABLE);
+    DL_GPIO_initPeripheralInputFunctionFeatures(GPIO_I2C_OLED_IOMUX_SCL,
+        GPIO_I2C_OLED_IOMUX_SCL_FUNC, DL_GPIO_INVERSION_DISABLE,
+        DL_GPIO_RESISTOR_NONE, DL_GPIO_HYSTERESIS_DISABLE,
+        DL_GPIO_WAKEUP_DISABLE);
+    DL_GPIO_enableHiZ(GPIO_I2C_OLED_IOMUX_SDA);
+    DL_GPIO_enableHiZ(GPIO_I2C_OLED_IOMUX_SCL);
 
     DL_GPIO_initPeripheralOutputFunction(
         GPIO_UART_CAM_IOMUX_TX, GPIO_UART_CAM_IOMUX_TX_FUNC);
@@ -460,6 +474,34 @@ SYSCONFIG_WEAK void SYSCFG_DL_CLOCK_init(void) {
 
 }
 
+
+static const DL_I2C_ClockConfig gI2C_OLEDClockConfig = {
+    .clockSel = DL_I2C_CLOCK_BUSCLK,
+    .divideRatio = DL_I2C_CLOCK_DIVIDE_4,
+};
+
+SYSCONFIG_WEAK void SYSCFG_DL_I2C_OLED_init(void) {
+
+    DL_I2C_setClockConfig(I2C_OLED_INST,
+        (DL_I2C_ClockConfig *) &gI2C_OLEDClockConfig);
+    DL_I2C_setAnalogGlitchFilterPulseWidth(I2C_OLED_INST,
+        DL_I2C_ANALOG_GLITCH_FILTER_WIDTH_50NS);
+    DL_I2C_enableAnalogGlitchFilter(I2C_OLED_INST);
+
+    /* Configure Controller Mode */
+    DL_I2C_resetControllerTransfer(I2C_OLED_INST);
+    /* Set frequency to 100000 Hz*/
+    DL_I2C_setTimerPeriod(I2C_OLED_INST, 9);
+    DL_I2C_setControllerTXFIFOThreshold(I2C_OLED_INST, DL_I2C_TX_FIFO_LEVEL_EMPTY);
+    DL_I2C_setControllerRXFIFOThreshold(I2C_OLED_INST, DL_I2C_RX_FIFO_LEVEL_BYTES_1);
+    DL_I2C_enableControllerClockStretching(I2C_OLED_INST);
+
+
+    /* Enable module */
+    DL_I2C_enableController(I2C_OLED_INST);
+
+
+}
 
 static const DL_UART_Main_ClockConfig gUART_CAMClockConfig = {
     .clockSel    = DL_UART_MAIN_CLOCK_MFCLK,

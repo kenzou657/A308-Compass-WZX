@@ -598,6 +598,21 @@
               <FileType>5</FileType>
               <FilePath>..\src\drivers\drv_jy61p.h</FilePath>
             </File>
+            <File>
+              <FileName>oled.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\src\drivers\oled.c</FilePath>
+            </File>
+            <File>
+              <FileName>oled.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\src\drivers\oled.h</FilePath>
+            </File>
+            <File>
+              <FileName>oledfont.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\src\drivers\oledfont.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

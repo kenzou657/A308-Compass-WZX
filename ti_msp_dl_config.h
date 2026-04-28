@@ -139,6 +139,22 @@ bool SYSCFG_DL_SYSCTL_SYSPLL_init(void);
 
 
 
+
+/* Defines for I2C_OLED */
+#define I2C_OLED_INST                                                       I2C1
+#define I2C_OLED_INST_IRQHandler                                 I2C1_IRQHandler
+#define I2C_OLED_INST_INT_IRQN                                     I2C1_INT_IRQn
+#define I2C_OLED_BUS_SPEED_HZ                                             100000
+#define GPIO_I2C_OLED_SDA_PORT                                             GPIOA
+#define GPIO_I2C_OLED_SDA_PIN                                     DL_GPIO_PIN_30
+#define GPIO_I2C_OLED_IOMUX_SDA                                   (IOMUX_PINCM5)
+#define GPIO_I2C_OLED_IOMUX_SDA_FUNC                    IOMUX_PINCM5_PF_I2C1_SDA
+#define GPIO_I2C_OLED_SCL_PORT                                             GPIOA
+#define GPIO_I2C_OLED_SCL_PIN                                     DL_GPIO_PIN_29
+#define GPIO_I2C_OLED_IOMUX_SCL                                   (IOMUX_PINCM4)
+#define GPIO_I2C_OLED_IOMUX_SCL_FUNC                    IOMUX_PINCM4_PF_I2C1_SCL
+
+
 /* Defines for UART_CAM */
 #define UART_CAM_INST                                                      UART0
 #define UART_CAM_INST_FREQUENCY                                          4000000
@@ -146,12 +162,12 @@ bool SYSCFG_DL_SYSCTL_SYSPLL_init(void);
 #define UART_CAM_INST_INT_IRQN                                    UART0_INT_IRQn
 #define GPIO_UART_CAM_RX_PORT                                              GPIOA
 #define GPIO_UART_CAM_TX_PORT                                              GPIOA
-#define GPIO_UART_CAM_RX_PIN                                      DL_GPIO_PIN_11
-#define GPIO_UART_CAM_TX_PIN                                      DL_GPIO_PIN_10
-#define GPIO_UART_CAM_IOMUX_RX                                   (IOMUX_PINCM22)
-#define GPIO_UART_CAM_IOMUX_TX                                   (IOMUX_PINCM21)
-#define GPIO_UART_CAM_IOMUX_RX_FUNC                    IOMUX_PINCM22_PF_UART0_RX
-#define GPIO_UART_CAM_IOMUX_TX_FUNC                    IOMUX_PINCM21_PF_UART0_TX
+#define GPIO_UART_CAM_RX_PIN                                       DL_GPIO_PIN_1
+#define GPIO_UART_CAM_TX_PIN                                       DL_GPIO_PIN_0
+#define GPIO_UART_CAM_IOMUX_RX                                    (IOMUX_PINCM2)
+#define GPIO_UART_CAM_IOMUX_TX                                    (IOMUX_PINCM1)
+#define GPIO_UART_CAM_IOMUX_RX_FUNC                     IOMUX_PINCM2_PF_UART0_RX
+#define GPIO_UART_CAM_IOMUX_TX_FUNC                     IOMUX_PINCM1_PF_UART0_TX
 #define UART_CAM_BAUD_RATE                                                (9600)
 #define UART_CAM_IBRD_4_MHZ_9600_BAUD                                       (26)
 #define UART_CAM_FBRD_4_MHZ_9600_BAUD                                        (3)
@@ -199,18 +215,18 @@ bool SYSCFG_DL_SYSCTL_SYSPLL_init(void);
 /* Port definition for Pin Group GPIO_MOTOR_DIR */
 #define GPIO_MOTOR_DIR_PORT                                              (GPIOA)
 
-/* Defines for MOTOR_AIN1: GPIOA.0 with pinCMx 1 on package pin 33 */
-#define GPIO_MOTOR_DIR_MOTOR_AIN1_PIN                            (DL_GPIO_PIN_0)
-#define GPIO_MOTOR_DIR_MOTOR_AIN1_IOMUX                           (IOMUX_PINCM1)
-/* Defines for MOTOR_AIN2: GPIOA.1 with pinCMx 2 on package pin 34 */
-#define GPIO_MOTOR_DIR_MOTOR_AIN2_PIN                            (DL_GPIO_PIN_1)
-#define GPIO_MOTOR_DIR_MOTOR_AIN2_IOMUX                           (IOMUX_PINCM2)
-/* Defines for MOTOR_BIN1: GPIOA.2 with pinCMx 7 on package pin 42 */
-#define GPIO_MOTOR_DIR_MOTOR_BIN1_PIN                            (DL_GPIO_PIN_2)
-#define GPIO_MOTOR_DIR_MOTOR_BIN1_IOMUX                           (IOMUX_PINCM7)
-/* Defines for MOTOR_BIN2: GPIOA.3 with pinCMx 8 on package pin 43 */
-#define GPIO_MOTOR_DIR_MOTOR_BIN2_PIN                            (DL_GPIO_PIN_3)
-#define GPIO_MOTOR_DIR_MOTOR_BIN2_IOMUX                           (IOMUX_PINCM8)
+/* Defines for MOTOR_AIN1: GPIOA.2 with pinCMx 7 on package pin 42 */
+#define GPIO_MOTOR_DIR_MOTOR_AIN1_PIN                            (DL_GPIO_PIN_2)
+#define GPIO_MOTOR_DIR_MOTOR_AIN1_IOMUX                           (IOMUX_PINCM7)
+/* Defines for MOTOR_AIN2: GPIOA.3 with pinCMx 8 on package pin 43 */
+#define GPIO_MOTOR_DIR_MOTOR_AIN2_PIN                            (DL_GPIO_PIN_3)
+#define GPIO_MOTOR_DIR_MOTOR_AIN2_IOMUX                           (IOMUX_PINCM8)
+/* Defines for MOTOR_BIN1: GPIOA.4 with pinCMx 9 on package pin 44 */
+#define GPIO_MOTOR_DIR_MOTOR_BIN1_PIN                            (DL_GPIO_PIN_4)
+#define GPIO_MOTOR_DIR_MOTOR_BIN1_IOMUX                           (IOMUX_PINCM9)
+/* Defines for MOTOR_BIN2: GPIOA.5 with pinCMx 10 on package pin 45 */
+#define GPIO_MOTOR_DIR_MOTOR_BIN2_PIN                            (DL_GPIO_PIN_5)
+#define GPIO_MOTOR_DIR_MOTOR_BIN2_IOMUX                          (IOMUX_PINCM10)
 /* Port definition for Pin Group GPIO_ENCODER */
 #define GPIO_ENCODER_PORT                                                (GPIOA)
 
@@ -236,6 +252,7 @@ void SYSCFG_DL_PWM_MOTOR_init(void);
 void SYSCFG_DL_ENCODER1A_init(void);
 void SYSCFG_DL_ENCODER2A_init(void);
 void SYSCFG_DL_CLOCK_init(void);
+void SYSCFG_DL_I2C_OLED_init(void);
 void SYSCFG_DL_UART_CAM_init(void);
 void SYSCFG_DL_UART_IMU_init(void);
 void SYSCFG_DL_DMA_init(void);
