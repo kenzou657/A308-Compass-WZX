@@ -538,6 +538,26 @@
               <FileType>5</FileType>
               <FilePath>..\src\app\key_logic.h</FilePath>
             </File>
+            <File>
+              <FileName>app_vacuum_pump.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\src\app\app_vacuum_pump.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_vacuum_pump.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\src\app\app_vacuum_pump.h</FilePath>
+            </File>
+            <File>
+              <FileName>app_gripper.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\src\app\app_gripper.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_gripper.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\src\app\app_gripper.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -632,6 +652,36 @@
               <FileName>drv_key.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\src\drivers\drv_key.h</FilePath>
+            </File>
+            <File>
+              <FileName>drv_vacuum_pump.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\src\drivers\drv_vacuum_pump.c</FilePath>
+            </File>
+            <File>
+              <FileName>drv_vacuum_pump.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\src\drivers\drv_vacuum_pump.h</FilePath>
+            </File>
+            <File>
+              <FileName>drv_gripper.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\src\drivers\drv_gripper.c</FilePath>
+            </File>
+            <File>
+              <FileName>drv_gripper.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\src\drivers\drv_gripper.h</FilePath>
+            </File>
+            <File>
+              <FileName>drv_servo.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\src\drivers\drv_servo.c</FilePath>
+            </File>
+            <File>
+              <FileName>drv_servo.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\src\drivers\drv_servo.h</FilePath>
             </File>
           </Files>
         </Group>

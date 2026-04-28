@@ -103,6 +103,36 @@ bool SYSCFG_DL_SYSCTL_SYSPLL_init(void);
 #define GPIO_PWM_MOTOR_C1_IOMUX_FUNC                 IOMUX_PINCM35_PF_TIMG0_CCP1
 #define GPIO_PWM_MOTOR_C1_IDX                                DL_TIMER_CC_1_INDEX
 
+/* Defines for PWM_SERVO */
+#define PWM_SERVO_INST                                                     TIMA1
+#define PWM_SERVO_INST_IRQHandler                               TIMA1_IRQHandler
+#define PWM_SERVO_INST_INT_IRQN                                 (TIMA1_INT_IRQn)
+#define PWM_SERVO_INST_CLK_FREQ                                            40000
+/* GPIO defines for channel 0 */
+#define GPIO_PWM_SERVO_C0_PORT                                             GPIOA
+#define GPIO_PWM_SERVO_C0_PIN                                     DL_GPIO_PIN_10
+#define GPIO_PWM_SERVO_C0_IOMUX                                  (IOMUX_PINCM21)
+#define GPIO_PWM_SERVO_C0_IOMUX_FUNC                 IOMUX_PINCM21_PF_TIMA1_CCP0
+#define GPIO_PWM_SERVO_C0_IDX                                DL_TIMER_CC_0_INDEX
+
+/* Defines for PWM_VACUUM */
+#define PWM_VACUUM_INST                                                    TIMG8
+#define PWM_VACUUM_INST_IRQHandler                              TIMG8_IRQHandler
+#define PWM_VACUUM_INST_INT_IRQN                                (TIMG8_INT_IRQn)
+#define PWM_VACUUM_INST_CLK_FREQ                                           20000
+/* GPIO defines for channel 0 */
+#define GPIO_PWM_VACUUM_C0_PORT                                            GPIOA
+#define GPIO_PWM_VACUUM_C0_PIN                                    DL_GPIO_PIN_26
+#define GPIO_PWM_VACUUM_C0_IOMUX                                 (IOMUX_PINCM59)
+#define GPIO_PWM_VACUUM_C0_IOMUX_FUNC                IOMUX_PINCM59_PF_TIMG8_CCP0
+#define GPIO_PWM_VACUUM_C0_IDX                               DL_TIMER_CC_0_INDEX
+/* GPIO defines for channel 1 */
+#define GPIO_PWM_VACUUM_C1_PORT                                            GPIOA
+#define GPIO_PWM_VACUUM_C1_PIN                                    DL_GPIO_PIN_30
+#define GPIO_PWM_VACUUM_C1_IOMUX                                  (IOMUX_PINCM5)
+#define GPIO_PWM_VACUUM_C1_IOMUX_FUNC                 IOMUX_PINCM5_PF_TIMG8_CCP1
+#define GPIO_PWM_VACUUM_C1_IDX                               DL_TIMER_CC_1_INDEX
+
 
 
 /* Defines for ENCODER1A */
@@ -276,6 +306,8 @@ void SYSCFG_DL_SYSCTL_init(void);
 
 bool SYSCFG_DL_SYSCTL_SYSPLL_init(void);
 void SYSCFG_DL_PWM_MOTOR_init(void);
+void SYSCFG_DL_PWM_SERVO_init(void);
+void SYSCFG_DL_PWM_VACUUM_init(void);
 void SYSCFG_DL_ENCODER1A_init(void);
 void SYSCFG_DL_ENCODER2A_init(void);
 void SYSCFG_DL_CLOCK_init(void);

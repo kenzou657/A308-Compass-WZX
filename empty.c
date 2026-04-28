@@ -42,6 +42,8 @@
 #include "app_task_manager.h"
 #include "key_logic.h"
 #include "oled.h"
+#include "app_vacuum_pump.h"
+#include "app_gripper.h"
 
 // ============ 变量创建区 ============
 volatile uint32_t uwTick_Motor_Set_Point = 0;   // 控制 Motor_Proc 的执行速度
@@ -81,6 +83,12 @@ int main(void)
     // 初始化任务管理器
     TaskManager_Init();
     
+    // 初始化真空泵应用
+    VacuumPump_App_Init();
+    
+    // 初始化夹爪应用
+    Gripper_App_Init();
+    
     // 显示初始化完成
     OLED_Clear();
     OLED_ShowString(4, 0, (uint8_t *)"Task ID: 1", 12, 1);
@@ -92,6 +100,8 @@ int main(void)
     while (1) {
         Key_Proc();             // 按键扫描和逻辑处理
         TaskManager_Update();   // 任务执行
+        VacuumPump_App_Update(); // 真空泵状态机更新
+        Gripper_App_Update();   // 夹爪状态机更新
         Camera_Proc();          // 摄像头数据处理
         OLED_Proc();            // OLED显示更新
         // Motor_Proc();        // 电机控制（可选）
