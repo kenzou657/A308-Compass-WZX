@@ -16,6 +16,8 @@
 #define KEY_DEBOUNCE_TIME_MS    20      /* 消抖延迟时间：20ms */
 #define KEY_SCAN_PERIOD_MS      10      /* 扫描周期：10ms（建议） */
 #define KEY_DEBOUNCE_COUNT      (KEY_DEBOUNCE_TIME_MS / KEY_SCAN_PERIOD_MS)  /* 消抖计数：2次 */
+#define KEY_LONG_PRESS_TIME_MS  1000    /* 长按时间阈值：1000ms */
+#define KEY_LONG_PRESS_COUNT    (KEY_LONG_PRESS_TIME_MS / KEY_SCAN_PERIOD_MS)  /* 长按计数：100次 */
 
 /* ==================== 按键状态机定义 ==================== */
 
@@ -34,6 +36,8 @@ typedef struct {
     KeyState_t current_state;   /* 当前按键状态 */
     KeyEvent_t event;           /* 按键事件 */
     uint32_t last_scan_time;    /* 上次扫描时间 */
+    uint16_t press_count;       /* 按下计数器（用于长按检测） */
+    bool long_press_reported;   /* 长按事件是否已上报 */
 } KeyControl_t;
 
 /* ==================== 全局变量 ==================== */
@@ -76,6 +80,8 @@ void Key_Init(void)
         g_keys[i].current_state = KEY_STATE_RELEASED;
         g_keys[i].event = KEY_EVENT_NONE;
         g_keys[i].last_scan_time = 0;
+        g_keys[i].press_count = 0;
+        g_keys[i].long_press_reported = false;
     }
 }
 
@@ -121,6 +127,16 @@ void Key_Scan(void)
                     /* 检测到释放，进入消抖状态 */
                     key->fsm_state = KEY_FSM_RELEASE_DEBOUNCE;
                     key->debounce_count = 0;
+                    key->press_count = 0;
+                    key->long_press_reported = false;
+                } else {
+                    /* 持续按下，增加长按计数 */
+                    key->press_count++;
+                    /* 检测长按事件（>1s） */
+                    if (key->press_count >= KEY_LONG_PRESS_COUNT && !key->long_press_reported) {
+                        key->event = KEY_EVENT_LONG_PRESSED;
+                        key->long_press_reported = true;
+                    }
                 }
                 break;
                 

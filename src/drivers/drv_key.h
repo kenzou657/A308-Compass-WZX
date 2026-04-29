@@ -40,6 +40,7 @@ typedef enum {
     KEY_EVENT_NONE = 0,         /* 无事件 */
     KEY_EVENT_PRESSED,          /* 按键按下事件 */
     KEY_EVENT_RELEASED,         /* 按键释放事件 */
+    KEY_EVENT_LONG_PRESSED,     /* 按键长按事件（>1s） */
 } KeyEvent_t;
 
 /* ==================== 按键驱动接口 ==================== */

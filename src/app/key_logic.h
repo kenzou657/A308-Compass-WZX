@@ -17,9 +17,25 @@
 /* ==================== 系统状态定义 ==================== */
 
 typedef enum {
-    SYSTEM_STATE_IDLE = 0,      /* 空闲状态（任务选择模式） */
-    SYSTEM_STATE_RUNNING = 1,   /* 运行状态（任务执行中） */
+    SYSTEM_STATE_IDLE = 0,           /* 空闲状态（任务选择模式） */
+    SYSTEM_STATE_RUNNING = 1,        /* 运行状态（任务执行中） */
+    SYSTEM_STATE_PARAM_SETTING = 2,  /* 参数设置状态 */
 } SystemState_t;
+
+/* ==================== 参数设置定义 ==================== */
+
+typedef enum {
+    PARAM_DESTINATION_1 = 0,  /* 参数A：目的地1 */
+    PARAM_DESTINATION_2 = 1,  /* 参数B：目的地2 */
+} ParamType_t;
+
+/* ==================== 参数设置结构体 ==================== */
+
+typedef struct {
+    uint8_t destination_1;     /* 目的地1（1-5） */
+    uint8_t destination_2;     /* 目的地2（1-5） */
+    ParamType_t current_param; /* 当前正在设置的参数 */
+} ParamSetting_t;
 
 /* ==================== 按键逻辑接口 ==================== */
 
@@ -68,5 +84,23 @@ SystemState_t Key_Logic_GetSystemState(void);
  * - state: 系统状态
  */
 void Key_Logic_SetSystemState(SystemState_t state);
+
+/*
+ * 获取参数设置结构体
+ *
+ * 返回：
+ * - 指向参数设置结构体的指针
+ */
+ParamSetting_t* Key_Logic_GetParamSetting(void);
+
+/*
+ * 进入参数设置模式
+ */
+void Key_Logic_EnterParamSetting(void);
+
+/*
+ * 退出参数设置模式
+ */
+void Key_Logic_ExitParamSetting(void);
 
 #endif /* KEY_LOGIC_H */

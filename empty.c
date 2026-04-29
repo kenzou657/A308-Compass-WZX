@@ -42,6 +42,7 @@
 #include "app_task_manager.h"
 #include "key_logic.h"
 #include "oled.h"
+#include "app_oled_display.h"
 #include "app_vacuum_pump.h"
 #include "app_gripper.h"
 
@@ -83,6 +84,9 @@ int main(void)
     // 初始化任务管理器
     TaskManager_Init();
     
+    // 初始化OLED显示模块
+    OLED_Display_Init();
+    
     // 初始化真空泵应用
     VacuumPump_App_Init();
     
@@ -90,12 +94,7 @@ int main(void)
     Gripper_App_Init();
     
     // 显示初始化完成
-    OLED_Clear();
-    OLED_ShowString(4, 0, (uint8_t *)"Task ID: 1", 12, 1);
-    OLED_ShowString(4, 12, (uint8_t *)"Status: IDLE", 12, 1);
-    OLED_ShowString(4, 24, (uint8_t *)"K1/K2: Select", 12, 1);
-    OLED_ShowString(4, 36, (uint8_t *)"K3: Start", 12, 1);
-    OLED_Refresh();
+    OLED_Display_Update();
 
     while (1) {
         Key_Proc();             // 按键扫描和逻辑处理
@@ -211,36 +210,6 @@ void OLED_Proc(void)
     }
     uwTick_OLED_Set_Point = uwTick;
     
-    // 格式化字符串缓冲
-    uint8_t display_buf[32];
-    
-    // 获取当前任务ID
-    TaskID_t task_id = TaskManager_GetCurrentTaskID();
-    
-    // 获取系统状态
-    SystemState_t sys_state = Key_Logic_GetSystemState();
-
-    
-    // 第 0 行：任务ID
-    sprintf((char *)display_buf, "Task ID: %d      ", task_id);
-    OLED_ShowString(4, 0, display_buf, 12, 1);
-    
-    // 第 1 行：系统状态
-    if (sys_state == SYSTEM_STATE_IDLE) {
-        OLED_ShowString(4, 12, (uint8_t *)"Status: IDLE    ", 12, 1);
-    } else {
-        OLED_ShowString(4, 24, (uint8_t *)"Status: RUN     ", 12, 1);
-    }
-    
-    // 第 2-3 行：按键提示
-    if (sys_state == SYSTEM_STATE_IDLE) {
-        OLED_ShowString(4, 24, (uint8_t *)"K1/K2: Select   ", 12, 1);
-        OLED_ShowString(4, 36, (uint8_t *)"K3: Start       ", 12, 1);
-    } else {
-        OLED_ShowString(4, 24, (uint8_t *)"Running...      ", 12, 1);
-        OLED_ShowString(4, 36, (uint8_t *)"K3: Stop        ", 12, 1);
-    }
-    
-    // 刷新显示
-    OLED_Refresh();
+    // 更新OLED显示
+    OLED_Display_Update();
 }

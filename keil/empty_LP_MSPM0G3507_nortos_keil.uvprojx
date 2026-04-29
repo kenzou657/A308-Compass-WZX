@@ -558,6 +558,16 @@
               <FileType>5</FileType>
               <FilePath>..\src\app\app_gripper.h</FilePath>
             </File>
+            <File>
+              <FileName>app_oled_display.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\src\app\app_oled_display.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_oled_display.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\src\app\app_oled_display.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

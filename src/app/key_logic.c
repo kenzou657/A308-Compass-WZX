@@ -17,6 +17,18 @@
 /* ==================== 全局变量 ==================== */
 
 static SystemState_t g_system_state = SYSTEM_STATE_IDLE;
+static ParamSetting_t g_param_setting = {
+    .destination_1 = 1,
+    .destination_2 = 1,
+    .current_param = PARAM_DESTINATION_1,
+};
+
+/* ==================== 参数设置辅助函数声明 ==================== */
+
+/*
+ * 增加目的地数值（1 → 2 → 3 → 4 → 5 → 1）
+ */
+static void ParamSetting_IncreaseDestination(uint8_t *destination);
 
 /* ==================== 按键逻辑实现 ==================== */
 
@@ -60,7 +72,7 @@ void Key_Logic_Process(void)
                 // LEDG_TOGGLE();
             }
             
-            /* K3: 启动当前任务 */
+            /* K3: 启动当前任务或进入参数设置 */
             if (k3_event == KEY_EVENT_PRESSED) {
                 /* 启动任务 */
                 TaskManager_StartTask();
@@ -73,6 +85,11 @@ void Key_Logic_Process(void)
                 
                 /* 可选：LED指示 */
                 // LEDR_ON();
+            }
+            
+            /* K2长按：进入参数设置模式 */
+            if (k2_event == KEY_EVENT_LONG_PRESSED) {
+                Key_Logic_EnterParamSetting();
             }
             break;
             
@@ -97,10 +114,58 @@ void Key_Logic_Process(void)
             /* 在运行状态下，K1和K2不响应 */
             break;
             
+        case SYSTEM_STATE_PARAM_SETTING:
+            /* ========== PARAM_SETTING状态：参数设置模式 ========== */
+            
+            // /* K1: 切换任务（在参数设置模式下也可用） */
+            // if (k1_event == KEY_EVENT_PRESSED) {
+            //     TaskManager_PrevTask();
+            // }
+            
+            /* K2短按：增加当前参数的数值 */
+            if (k2_event == KEY_EVENT_PRESSED) {
+                if (g_param_setting.current_param == PARAM_DESTINATION_1) {
+                    ParamSetting_IncreaseDestination(&g_param_setting.destination_1);
+                } else {
+                    ParamSetting_IncreaseDestination(&g_param_setting.destination_2);
+                }
+            }
+            
+            /* K2长按：切换参数A/B */
+            if (k2_event == KEY_EVENT_LONG_PRESSED) {
+                if (g_param_setting.current_param == PARAM_DESTINATION_1) {
+                    g_param_setting.current_param = PARAM_DESTINATION_2;
+                    LEDG_ON();  /* 参数B被选中时，打开绿灯 */
+                } else {
+                    g_param_setting.current_param = PARAM_DESTINATION_1;
+                    LEDG_OFF();  /* 参数A被选中时，关闭绿灯 */
+                }
+            }
+            
+            /* K3: 确认并退出参数设置 */
+            if (k3_event == KEY_EVENT_PRESSED) {
+                Key_Logic_ExitParamSetting();
+            }
+            break;
+            
         default:
             /* 异常状态，重置为IDLE */
             g_system_state = SYSTEM_STATE_IDLE;
             break;
+    }
+}
+
+/* ==================== 参数设置辅助函数实现 ==================== */
+
+/*
+ * 增加目的地数值（1 → 2 → 3 → 4 → 5 → 1）
+ */
+static void ParamSetting_IncreaseDestination(uint8_t *destination)
+{
+    if (*destination >= 5) {
+        *destination = 1;
+    } else {
+        (*destination)++;
     }
 }
 
@@ -112,4 +177,22 @@ SystemState_t Key_Logic_GetSystemState(void)
 void Key_Logic_SetSystemState(SystemState_t state)
 {
     g_system_state = state;
+}
+
+ParamSetting_t* Key_Logic_GetParamSetting(void)
+{
+    return &g_param_setting;
+}
+
+void Key_Logic_EnterParamSetting(void)
+{
+    g_system_state = SYSTEM_STATE_PARAM_SETTING;
+    g_param_setting.current_param = PARAM_DESTINATION_1;
+    LEDG_OFF();  /* 进入参数设置时，关闭绿灯 */
+}
+
+void Key_Logic_ExitParamSetting(void)
+{
+    g_system_state = SYSTEM_STATE_IDLE;
+    LEDG_OFF();  /* 退出参数设置时，关闭绿灯 */
 }
