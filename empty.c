@@ -54,6 +54,8 @@ volatile uint32_t uwTick_Camera_Set_Point = 0;  // 控制 Camera_Proc 的执行�
 volatile uint32_t uwTick_OLED_Set_Point = 0;    // 控制 OLED_Proc 的执行速度
 volatile uint32_t uwTick_Key_Set_Point = 0;     // 控制 Key_Scan 的执行速度
 
+uint8_t motor_state = 0;
+
 // ============ 子函数声明区 ============
 void Motor_Proc(void);
 void Camera_Proc(void);
@@ -100,10 +102,7 @@ int main(void)
     // 显示初始化完成
     OLED_Display_Update();
 
-    Motor_SetDuty(MOTOR_A, 200);
-    Motor_SetDirection(MOTOR_A, MOTOR_DIR_FORWARD);
-    Motor_SetDuty(MOTOR_B, 200);
-    Motor_SetDirection(MOTOR_B, MOTOR_DIR_FORWARD);
+
     
 
     while (1) {
@@ -130,6 +129,14 @@ void Motor_Proc(void)
         return;
     }
     uwTick_Motor_Set_Point = uwTick;
+    motor_state++;
+    if(motor_state >= 4) {
+        motor_state = 0;
+        Motor_SetDuty(MOTOR_A, 150);
+        Motor_SetDirection(MOTOR_A, MOTOR_DIR_FORWARD);
+        Motor_SetDuty(MOTOR_B, 150);
+        Motor_SetDirection(MOTOR_B, MOTOR_DIR_FORWARD);
+    }
 
     // 电机控制逻辑在此处添加
     // beep_1s_start();
