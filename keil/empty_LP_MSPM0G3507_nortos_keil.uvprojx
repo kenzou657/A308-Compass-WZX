@@ -466,6 +466,16 @@
               <FileType>5</FileType>
               <FilePath>..\src\drivers\drv_led.h</FilePath>
             </File>
+            <File>
+              <FileName>drv_motor.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\src\drivers\drv_motor.c</FilePath>
+            </File>
+            <File>
+              <FileName>drv_motor.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\src\drivers\drv_motor.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

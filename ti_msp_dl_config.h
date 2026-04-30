@@ -85,6 +85,26 @@ extern "C" {
 bool SYSCFG_DL_SYSCTL_SYSPLL_init(void);
 
 
+/* Defines for PWM_MOTOR */
+#define PWM_MOTOR_INST                                                     TIMG8
+#define PWM_MOTOR_INST_IRQHandler                               TIMG8_IRQHandler
+#define PWM_MOTOR_INST_INT_IRQN                                 (TIMG8_INT_IRQn)
+#define PWM_MOTOR_INST_CLK_FREQ                                          5000000
+/* GPIO defines for channel 0 */
+#define GPIO_PWM_MOTOR_C0_PORT                                             GPIOA
+#define GPIO_PWM_MOTOR_C0_PIN                                      DL_GPIO_PIN_7
+#define GPIO_PWM_MOTOR_C0_IOMUX                                  (IOMUX_PINCM14)
+#define GPIO_PWM_MOTOR_C0_IOMUX_FUNC                 IOMUX_PINCM14_PF_TIMG8_CCP0
+#define GPIO_PWM_MOTOR_C0_IDX                                DL_TIMER_CC_0_INDEX
+/* GPIO defines for channel 1 */
+#define GPIO_PWM_MOTOR_C1_PORT                                             GPIOA
+#define GPIO_PWM_MOTOR_C1_PIN                                      DL_GPIO_PIN_4
+#define GPIO_PWM_MOTOR_C1_IOMUX                                   (IOMUX_PINCM9)
+#define GPIO_PWM_MOTOR_C1_IOMUX_FUNC                  IOMUX_PINCM9_PF_TIMG8_CCP1
+#define GPIO_PWM_MOTOR_C1_IDX                                DL_TIMER_CC_1_INDEX
+
+
+
 
 /* Port definition for Pin Group GPIO_BEEP */
 #define GPIO_BEEP_PORT                                                   (GPIOA)
@@ -98,6 +118,14 @@ bool SYSCFG_DL_SYSCTL_SYSPLL_init(void);
 /* Defines for USER_LED_G: GPIOB.27 with pinCMx 58 on package pin 29 */
 #define GPIO_LEDS_USER_LED_G_PIN                                (DL_GPIO_PIN_27)
 #define GPIO_LEDS_USER_LED_G_IOMUX                               (IOMUX_PINCM58)
+/* Defines for MOTOR_A_DIR: GPIOA.3 with pinCMx 8 on package pin 43 */
+#define GPIO_MOTOR_DIR_MOTOR_A_DIR_PORT                                  (GPIOA)
+#define GPIO_MOTOR_DIR_MOTOR_A_DIR_PIN                           (DL_GPIO_PIN_3)
+#define GPIO_MOTOR_DIR_MOTOR_A_DIR_IOMUX                          (IOMUX_PINCM8)
+/* Defines for MOTOR_B_DIR: GPIOB.14 with pinCMx 31 on package pin 2 */
+#define GPIO_MOTOR_DIR_MOTOR_B_DIR_PORT                                  (GPIOB)
+#define GPIO_MOTOR_DIR_MOTOR_B_DIR_PIN                          (DL_GPIO_PIN_14)
+#define GPIO_MOTOR_DIR_MOTOR_B_DIR_IOMUX                         (IOMUX_PINCM31)
 
 
 
@@ -110,9 +138,12 @@ void SYSCFG_DL_GPIO_init(void);
 void SYSCFG_DL_SYSCTL_init(void);
 
 bool SYSCFG_DL_SYSCTL_SYSPLL_init(void);
+void SYSCFG_DL_PWM_MOTOR_init(void);
 
 void SYSCFG_DL_SYSTICK_init(void);
 
+bool SYSCFG_DL_saveConfiguration(void);
+bool SYSCFG_DL_restoreConfiguration(void);
 
 #ifdef __cplusplus
 }
