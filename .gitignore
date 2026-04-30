@@ -8,6 +8,7 @@ keil/*.lnp
 keil/*.htm
 keil/*.build_log.htm
 keil/*.uvguix.*
+ref/
 
 # IDE 配置
 .vscode/

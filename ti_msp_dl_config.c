@@ -51,6 +51,9 @@ SYSCONFIG_WEAK void SYSCFG_DL_init(void)
     /* Module-Specific Initializations*/
     SYSCFG_DL_SYSCTL_init();
     SYSCFG_DL_PWM_MOTOR_init();
+    SYSCFG_DL_UART_CAM_init();
+    SYSCFG_DL_UART_IMU_init();
+    SYSCFG_DL_DMA_init();
     SYSCFG_DL_SYSTICK_init();
 }
 
@@ -61,11 +64,17 @@ SYSCONFIG_WEAK void SYSCFG_DL_initPower(void)
     DL_GPIO_reset(GPIOA);
     DL_GPIO_reset(GPIOB);
     DL_TimerG_reset(PWM_MOTOR_INST);
+    DL_UART_Main_reset(UART_CAM_INST);
+    DL_UART_Main_reset(UART_IMU_INST);
+
 
 
     DL_GPIO_enablePower(GPIOA);
     DL_GPIO_enablePower(GPIOB);
     DL_TimerG_enablePower(PWM_MOTOR_INST);
+    DL_UART_Main_enablePower(UART_CAM_INST);
+    DL_UART_Main_enablePower(UART_IMU_INST);
+
 
     delay_cycles(POWER_STARTUP_DELAY);
 }
@@ -77,6 +86,15 @@ SYSCONFIG_WEAK void SYSCFG_DL_GPIO_init(void)
     DL_GPIO_enableOutput(GPIO_PWM_MOTOR_C0_PORT, GPIO_PWM_MOTOR_C0_PIN);
     DL_GPIO_initPeripheralOutputFunction(GPIO_PWM_MOTOR_C1_IOMUX,GPIO_PWM_MOTOR_C1_IOMUX_FUNC);
     DL_GPIO_enableOutput(GPIO_PWM_MOTOR_C1_PORT, GPIO_PWM_MOTOR_C1_PIN);
+
+    DL_GPIO_initPeripheralOutputFunction(
+        GPIO_UART_CAM_IOMUX_TX, GPIO_UART_CAM_IOMUX_TX_FUNC);
+    DL_GPIO_initPeripheralInputFunction(
+        GPIO_UART_CAM_IOMUX_RX, GPIO_UART_CAM_IOMUX_RX_FUNC);
+    DL_GPIO_initPeripheralOutputFunction(
+        GPIO_UART_IMU_IOMUX_TX, GPIO_UART_IMU_IOMUX_TX_FUNC);
+    DL_GPIO_initPeripheralInputFunction(
+        GPIO_UART_IMU_IOMUX_RX, GPIO_UART_IMU_IOMUX_RX_FUNC);
 
     DL_GPIO_initDigitalOutputFeatures(GPIO_BEEP_USER_BEEP_IOMUX,
 		 DL_GPIO_INVERSION_DISABLE, DL_GPIO_RESISTOR_PULL_DOWN,
@@ -207,6 +225,7 @@ SYSCONFIG_WEAK void SYSCFG_DL_SYSCTL_init(void)
         while ((DL_SYSCTL_getClockStatus() & SYSCTL_CLKSTATUS_SYSPLLGOOD_MASK) != DL_SYSCTL_CLK_STATUS_SYSPLL_GOOD){}
     }
     DL_SYSCTL_setULPCLKDivider(DL_SYSCTL_ULPCLK_DIV_2);
+    DL_SYSCTL_enableMFCLK();
     DL_SYSCTL_setMCLKSource(SYSOSC, HSCLK, DL_SYSCTL_HSCLK_SOURCE_SYSPLL);
 
 }
@@ -262,6 +281,100 @@ SYSCONFIG_WEAK void SYSCFG_DL_PWM_MOTOR_init(void) {
     DL_TimerG_setCCPDirection(PWM_MOTOR_INST , DL_TIMER_CC0_OUTPUT | DL_TIMER_CC1_OUTPUT );
 
 
+}
+
+
+static const DL_UART_Main_ClockConfig gUART_CAMClockConfig = {
+    .clockSel    = DL_UART_MAIN_CLOCK_MFCLK,
+    .divideRatio = DL_UART_MAIN_CLOCK_DIVIDE_RATIO_1
+};
+
+static const DL_UART_Main_Config gUART_CAMConfig = {
+    .mode        = DL_UART_MAIN_MODE_NORMAL,
+    .direction   = DL_UART_MAIN_DIRECTION_TX_RX,
+    .flowControl = DL_UART_MAIN_FLOW_CONTROL_NONE,
+    .parity      = DL_UART_MAIN_PARITY_NONE,
+    .wordLength  = DL_UART_MAIN_WORD_LENGTH_8_BITS,
+    .stopBits    = DL_UART_MAIN_STOP_BITS_ONE
+};
+
+SYSCONFIG_WEAK void SYSCFG_DL_UART_CAM_init(void)
+{
+    DL_UART_Main_setClockConfig(UART_CAM_INST, (DL_UART_Main_ClockConfig *) &gUART_CAMClockConfig);
+
+    DL_UART_Main_init(UART_CAM_INST, (DL_UART_Main_Config *) &gUART_CAMConfig);
+    /*
+     * Configure baud rate by setting oversampling and baud rate divisors.
+     *  Target baud rate: 9600
+     *  Actual baud rate: 9598.08
+     */
+    DL_UART_Main_setOversampling(UART_CAM_INST, DL_UART_OVERSAMPLING_RATE_16X);
+    DL_UART_Main_setBaudRateDivisor(UART_CAM_INST, UART_CAM_IBRD_4_MHZ_9600_BAUD, UART_CAM_FBRD_4_MHZ_9600_BAUD);
+
+
+    /* Configure Interrupts */
+    DL_UART_Main_enableInterrupt(UART_CAM_INST,
+                                 DL_UART_MAIN_INTERRUPT_DMA_DONE_RX);
+
+    /* Configure DMA Receive Event */
+    DL_UART_Main_enableDMAReceiveEvent(UART_CAM_INST, DL_UART_DMA_INTERRUPT_RX);
+
+    DL_UART_Main_enable(UART_CAM_INST);
+}
+static const DL_UART_Main_ClockConfig gUART_IMUClockConfig = {
+    .clockSel    = DL_UART_MAIN_CLOCK_MFCLK,
+    .divideRatio = DL_UART_MAIN_CLOCK_DIVIDE_RATIO_1
+};
+
+static const DL_UART_Main_Config gUART_IMUConfig = {
+    .mode        = DL_UART_MAIN_MODE_NORMAL,
+    .direction   = DL_UART_MAIN_DIRECTION_TX_RX,
+    .flowControl = DL_UART_MAIN_FLOW_CONTROL_NONE,
+    .parity      = DL_UART_MAIN_PARITY_NONE,
+    .wordLength  = DL_UART_MAIN_WORD_LENGTH_8_BITS,
+    .stopBits    = DL_UART_MAIN_STOP_BITS_ONE
+};
+
+SYSCONFIG_WEAK void SYSCFG_DL_UART_IMU_init(void)
+{
+    DL_UART_Main_setClockConfig(UART_IMU_INST, (DL_UART_Main_ClockConfig *) &gUART_IMUClockConfig);
+
+    DL_UART_Main_init(UART_IMU_INST, (DL_UART_Main_Config *) &gUART_IMUConfig);
+    /*
+     * Configure baud rate by setting oversampling and baud rate divisors.
+     *  Target baud rate: 9600
+     *  Actual baud rate: 9598.08
+     */
+    DL_UART_Main_setOversampling(UART_IMU_INST, DL_UART_OVERSAMPLING_RATE_16X);
+    DL_UART_Main_setBaudRateDivisor(UART_IMU_INST, UART_IMU_IBRD_4_MHZ_9600_BAUD, UART_IMU_FBRD_4_MHZ_9600_BAUD);
+
+
+    /* Configure Interrupts */
+    DL_UART_Main_enableInterrupt(UART_IMU_INST,
+                                 DL_UART_MAIN_INTERRUPT_RX);
+
+
+    DL_UART_Main_enable(UART_IMU_INST);
+}
+
+static const DL_DMA_Config gDMA_UART0_RXConfig = {
+    .transferMode   = DL_DMA_SINGLE_TRANSFER_MODE,
+    .extendedMode   = DL_DMA_NORMAL_MODE,
+    .destIncrement  = DL_DMA_ADDR_INCREMENT,
+    .srcIncrement   = DL_DMA_ADDR_UNCHANGED,
+    .destWidth      = DL_DMA_WIDTH_BYTE,
+    .srcWidth       = DL_DMA_WIDTH_BYTE,
+    .trigger        = UART_CAM_INST_DMA_TRIGGER,
+    .triggerType    = DL_DMA_TRIGGER_TYPE_EXTERNAL,
+};
+
+SYSCONFIG_WEAK void SYSCFG_DL_DMA_UART0_RX_init(void)
+{
+    DL_DMA_setTransferSize(DMA, DMA_UART0_RX_CHAN_ID, 12);
+    DL_DMA_initChannel(DMA, DMA_UART0_RX_CHAN_ID , (DL_DMA_Config *) &gDMA_UART0_RXConfig);
+}
+SYSCONFIG_WEAK void SYSCFG_DL_DMA_init(void){
+    SYSCFG_DL_DMA_UART0_RX_init();
 }
 
 

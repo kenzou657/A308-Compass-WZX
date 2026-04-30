@@ -105,6 +105,47 @@ bool SYSCFG_DL_SYSCTL_SYSPLL_init(void);
 
 
 
+/* Defines for UART_CAM */
+#define UART_CAM_INST                                                      UART0
+#define UART_CAM_INST_FREQUENCY                                          4000000
+#define UART_CAM_INST_IRQHandler                                UART0_IRQHandler
+#define UART_CAM_INST_INT_IRQN                                    UART0_INT_IRQn
+#define GPIO_UART_CAM_RX_PORT                                              GPIOA
+#define GPIO_UART_CAM_TX_PORT                                              GPIOA
+#define GPIO_UART_CAM_RX_PIN                                      DL_GPIO_PIN_11
+#define GPIO_UART_CAM_TX_PIN                                      DL_GPIO_PIN_10
+#define GPIO_UART_CAM_IOMUX_RX                                   (IOMUX_PINCM22)
+#define GPIO_UART_CAM_IOMUX_TX                                   (IOMUX_PINCM21)
+#define GPIO_UART_CAM_IOMUX_RX_FUNC                    IOMUX_PINCM22_PF_UART0_RX
+#define GPIO_UART_CAM_IOMUX_TX_FUNC                    IOMUX_PINCM21_PF_UART0_TX
+#define UART_CAM_BAUD_RATE                                                (9600)
+#define UART_CAM_IBRD_4_MHZ_9600_BAUD                                       (26)
+#define UART_CAM_FBRD_4_MHZ_9600_BAUD                                        (3)
+/* Defines for UART_IMU */
+#define UART_IMU_INST                                                      UART1
+#define UART_IMU_INST_FREQUENCY                                          4000000
+#define UART_IMU_INST_IRQHandler                                UART1_IRQHandler
+#define UART_IMU_INST_INT_IRQN                                    UART1_INT_IRQn
+#define GPIO_UART_IMU_RX_PORT                                              GPIOA
+#define GPIO_UART_IMU_TX_PORT                                              GPIOA
+#define GPIO_UART_IMU_RX_PIN                                       DL_GPIO_PIN_9
+#define GPIO_UART_IMU_TX_PIN                                       DL_GPIO_PIN_8
+#define GPIO_UART_IMU_IOMUX_RX                                   (IOMUX_PINCM20)
+#define GPIO_UART_IMU_IOMUX_TX                                   (IOMUX_PINCM19)
+#define GPIO_UART_IMU_IOMUX_RX_FUNC                    IOMUX_PINCM20_PF_UART1_RX
+#define GPIO_UART_IMU_IOMUX_TX_FUNC                    IOMUX_PINCM19_PF_UART1_TX
+#define UART_IMU_BAUD_RATE                                                (9600)
+#define UART_IMU_IBRD_4_MHZ_9600_BAUD                                       (26)
+#define UART_IMU_FBRD_4_MHZ_9600_BAUD                                        (3)
+
+
+
+
+
+/* Defines for DMA_UART0_RX */
+#define DMA_UART0_RX_CHAN_ID                                                 (0)
+#define UART_CAM_INST_DMA_TRIGGER                            (DMA_UART0_RX_TRIG)
+
 
 /* Port definition for Pin Group GPIO_BEEP */
 #define GPIO_BEEP_PORT                                                   (GPIOA)
@@ -139,6 +180,9 @@ void SYSCFG_DL_SYSCTL_init(void);
 
 bool SYSCFG_DL_SYSCTL_SYSPLL_init(void);
 void SYSCFG_DL_PWM_MOTOR_init(void);
+void SYSCFG_DL_UART_CAM_init(void);
+void SYSCFG_DL_UART_IMU_init(void);
+void SYSCFG_DL_DMA_init(void);
 
 void SYSCFG_DL_SYSTICK_init(void);
 
