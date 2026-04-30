@@ -45,6 +45,8 @@
 #include "app_oled_display.h"
 #include "app_vacuum_pump.h"
 #include "app_gripper.h"
+#include "drv_motor.h"
+#include "config.h"
 
 // ============ 变量创建区 ============
 volatile uint32_t uwTick_Motor_Set_Point = 0;   // 控制 Motor_Proc 的执行速度
@@ -86,6 +88,8 @@ int main(void)
     
     // 初始化OLED显示模块
     OLED_Display_Init();
+
+    Motor_Init();
     
     // 初始化真空泵应用
     VacuumPump_App_Init();
@@ -96,6 +100,12 @@ int main(void)
     // 显示初始化完成
     OLED_Display_Update();
 
+    Motor_SetDuty(MOTOR_A, 200);
+    Motor_SetDirection(MOTOR_A, MOTOR_DIR_FORWARD);
+    Motor_SetDuty(MOTOR_B, 200);
+    Motor_SetDirection(MOTOR_B, MOTOR_DIR_FORWARD);
+    
+
     while (1) {
         Key_Proc();             // 按键扫描和逻辑处理
         TaskManager_Update();   // 任务执行
@@ -103,7 +113,7 @@ int main(void)
         Gripper_App_Update();   // 夹爪状态机更新
         Camera_Proc();          // 摄像头数据处理
         OLED_Proc();            // OLED显示更新
-        // Motor_Proc();        // 电机控制（可选）
+        Motor_Proc();        // 电机控制（可选）
         // beep_1s_process();   // 蜂鸣器（可选）
     }
 }
@@ -212,4 +222,9 @@ void OLED_Proc(void)
     
     // 更新OLED显示
     OLED_Display_Update();
+}
+
+void HardFault_Handler(void) {
+    while(1); // 在这里打断点！
+    // 如果电机一转卡在这里，说明是电源/干扰把硬件震崩了，而不是代码逻辑错。
 }
