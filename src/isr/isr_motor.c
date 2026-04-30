@@ -26,7 +26,7 @@ void ENCODER1A_IRQHandler(void)
 void ENCODER2A_IRQHandler(void)
 {
     /* 清除中断标志 */
-    DL_TimerA_clearInterruptStatus(ENCODER2A_INST, DL_TIMERA_INTERRUPT_CC0_DN_EVENT);
+    DL_TimerG_clearInterruptStatus(ENCODER2A_INST, DL_TIMERG_INTERRUPT_CC0_DN_EVENT);
     
     /* 调用电机驱动的编码器中断处理 */
     Motor_Encoder2A_ISR();

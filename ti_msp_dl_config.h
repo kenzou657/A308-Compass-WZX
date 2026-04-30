@@ -110,9 +110,9 @@ bool SYSCFG_DL_SYSCTL_SYSPLL_init(void);
 #define PWM_SERVO_INST_CLK_FREQ                                            40000
 /* GPIO defines for channel 0 */
 #define GPIO_PWM_SERVO_C0_PORT                                             GPIOA
-#define GPIO_PWM_SERVO_C0_PIN                                     DL_GPIO_PIN_10
-#define GPIO_PWM_SERVO_C0_IOMUX                                  (IOMUX_PINCM21)
-#define GPIO_PWM_SERVO_C0_IOMUX_FUNC                 IOMUX_PINCM21_PF_TIMA1_CCP0
+#define GPIO_PWM_SERVO_C0_PIN                                     DL_GPIO_PIN_15
+#define GPIO_PWM_SERVO_C0_IOMUX                                  (IOMUX_PINCM37)
+#define GPIO_PWM_SERVO_C0_IOMUX_FUNC                 IOMUX_PINCM37_PF_TIMA1_CCP0
 #define GPIO_PWM_SERVO_C0_IDX                                DL_TIMER_CC_0_INDEX
 
 /* Defines for PWM_VACUUM */
@@ -122,15 +122,15 @@ bool SYSCFG_DL_SYSCTL_SYSPLL_init(void);
 #define PWM_VACUUM_INST_CLK_FREQ                                           20000
 /* GPIO defines for channel 0 */
 #define GPIO_PWM_VACUUM_C0_PORT                                            GPIOA
-#define GPIO_PWM_VACUUM_C0_PIN                                    DL_GPIO_PIN_26
-#define GPIO_PWM_VACUUM_C0_IOMUX                                 (IOMUX_PINCM59)
-#define GPIO_PWM_VACUUM_C0_IOMUX_FUNC                IOMUX_PINCM59_PF_TIMG8_CCP0
+#define GPIO_PWM_VACUUM_C0_PIN                                     DL_GPIO_PIN_1
+#define GPIO_PWM_VACUUM_C0_IOMUX                                  (IOMUX_PINCM2)
+#define GPIO_PWM_VACUUM_C0_IOMUX_FUNC                 IOMUX_PINCM2_PF_TIMG8_CCP0
 #define GPIO_PWM_VACUUM_C0_IDX                               DL_TIMER_CC_0_INDEX
 /* GPIO defines for channel 1 */
 #define GPIO_PWM_VACUUM_C1_PORT                                            GPIOA
-#define GPIO_PWM_VACUUM_C1_PIN                                    DL_GPIO_PIN_30
-#define GPIO_PWM_VACUUM_C1_IOMUX                                  (IOMUX_PINCM5)
-#define GPIO_PWM_VACUUM_C1_IOMUX_FUNC                 IOMUX_PINCM5_PF_TIMG8_CCP1
+#define GPIO_PWM_VACUUM_C1_PIN                                     DL_GPIO_PIN_0
+#define GPIO_PWM_VACUUM_C1_IOMUX                                  (IOMUX_PINCM1)
+#define GPIO_PWM_VACUUM_C1_IOMUX_FUNC                 IOMUX_PINCM1_PF_TIMG8_CCP1
 #define GPIO_PWM_VACUUM_C1_IDX                               DL_TIMER_CC_1_INDEX
 
 
@@ -176,12 +176,12 @@ bool SYSCFG_DL_SYSCTL_SYSPLL_init(void);
 #define UART_CAM_INST_INT_IRQN                                    UART0_INT_IRQn
 #define GPIO_UART_CAM_RX_PORT                                              GPIOA
 #define GPIO_UART_CAM_TX_PORT                                              GPIOA
-#define GPIO_UART_CAM_RX_PIN                                       DL_GPIO_PIN_1
-#define GPIO_UART_CAM_TX_PIN                                       DL_GPIO_PIN_0
-#define GPIO_UART_CAM_IOMUX_RX                                    (IOMUX_PINCM2)
-#define GPIO_UART_CAM_IOMUX_TX                                    (IOMUX_PINCM1)
-#define GPIO_UART_CAM_IOMUX_RX_FUNC                     IOMUX_PINCM2_PF_UART0_RX
-#define GPIO_UART_CAM_IOMUX_TX_FUNC                     IOMUX_PINCM1_PF_UART0_TX
+#define GPIO_UART_CAM_RX_PIN                                      DL_GPIO_PIN_11
+#define GPIO_UART_CAM_TX_PIN                                      DL_GPIO_PIN_10
+#define GPIO_UART_CAM_IOMUX_RX                                   (IOMUX_PINCM22)
+#define GPIO_UART_CAM_IOMUX_TX                                   (IOMUX_PINCM21)
+#define GPIO_UART_CAM_IOMUX_RX_FUNC                    IOMUX_PINCM22_PF_UART0_RX
+#define GPIO_UART_CAM_IOMUX_TX_FUNC                    IOMUX_PINCM21_PF_UART0_TX
 #define UART_CAM_BAUD_RATE                                                (9600)
 #define UART_CAM_IBRD_4_MHZ_9600_BAUD                                       (26)
 #define UART_CAM_FBRD_4_MHZ_9600_BAUD                                        (3)

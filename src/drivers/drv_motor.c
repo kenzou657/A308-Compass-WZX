@@ -42,7 +42,7 @@ void Motor_EncoderInit(void)
 {
     /* 启动编码器捕获定时器 */
     DL_TimerG_startCounter(ENCODER1A_INST);
-    DL_TimerA_startCounter(ENCODER2A_INST);
+    DL_TimerG_startCounter(ENCODER2A_INST);
     
     /* 启动CLOCK定时器（100Hz） */
     DL_TimerA_startCounter(CLOCK_INST);
