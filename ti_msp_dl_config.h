@@ -149,6 +149,25 @@ bool SYSCFG_DL_SYSCTL_SYSPLL_init(void);
 
 
 
+/* Defines for SPI_OLED */
+#define SPI_OLED_INST                                                      SPI1
+#define SPI_OLED_INST_IRQHandler                                SPI1_IRQHandler
+#define SPI_OLED_INST_INT_IRQN                                    SPI1_INT_IRQn
+#define GPIO_SPI_OLED_PICO_PORT                                           GPIOB
+#define GPIO_SPI_OLED_PICO_PIN                                   DL_GPIO_PIN_15
+#define GPIO_SPI_OLED_IOMUX_PICO                                (IOMUX_PINCM32)
+#define GPIO_SPI_OLED_IOMUX_PICO_FUNC                IOMUX_PINCM32_PF_SPI1_PICO
+#define GPIO_SPI_OLED_POCI_PORT                                           GPIOA
+#define GPIO_SPI_OLED_POCI_PIN                                   DL_GPIO_PIN_16
+#define GPIO_SPI_OLED_IOMUX_POCI                                (IOMUX_PINCM38)
+#define GPIO_SPI_OLED_IOMUX_POCI_FUNC                IOMUX_PINCM38_PF_SPI1_POCI
+/* GPIO configuration for SPI_OLED */
+#define GPIO_SPI_OLED_SCLK_PORT                                           GPIOA
+#define GPIO_SPI_OLED_SCLK_PIN                                   DL_GPIO_PIN_17
+#define GPIO_SPI_OLED_IOMUX_SCLK                                (IOMUX_PINCM39)
+#define GPIO_SPI_OLED_IOMUX_SCLK_FUNC                IOMUX_PINCM39_PF_SPI1_SCLK
+
+
 
 /* Defines for DMA_UART0_RX */
 #define DMA_UART0_RX_CHAN_ID                                                 (0)
@@ -178,25 +197,49 @@ bool SYSCFG_DL_SYSCTL_SYSPLL_init(void);
 /* Port definition for Pin Group GPIO_ENCODER */
 #define GPIO_ENCODER_PORT                                                (GPIOB)
 
-/* Defines for E1B: GPIOB.20 with pinCMx 48 on package pin 19 */
+/* Defines for E1B: GPIOB.18 with pinCMx 44 on package pin 15 */
 // pins affected by this interrupt request:["E1B","E2B","E1A","E2A"]
 #define GPIO_ENCODER_INT_IRQN                                   (GPIOB_INT_IRQn)
 #define GPIO_ENCODER_INT_IIDX                   (DL_INTERRUPT_GROUP1_IIDX_GPIOB)
-#define GPIO_ENCODER_E1B_IIDX                               (DL_GPIO_IIDX_DIO20)
-#define GPIO_ENCODER_E1B_PIN                                    (DL_GPIO_PIN_20)
-#define GPIO_ENCODER_E1B_IOMUX                                   (IOMUX_PINCM48)
+#define GPIO_ENCODER_E1B_IIDX                               (DL_GPIO_IIDX_DIO18)
+#define GPIO_ENCODER_E1B_PIN                                    (DL_GPIO_PIN_18)
+#define GPIO_ENCODER_E1B_IOMUX                                   (IOMUX_PINCM44)
 /* Defines for E2B: GPIOB.25 with pinCMx 56 on package pin 27 */
 #define GPIO_ENCODER_E2B_IIDX                               (DL_GPIO_IIDX_DIO25)
 #define GPIO_ENCODER_E2B_PIN                                    (DL_GPIO_PIN_25)
 #define GPIO_ENCODER_E2B_IOMUX                                   (IOMUX_PINCM56)
-/* Defines for E1A: GPIOB.21 with pinCMx 49 on package pin 20 */
-#define GPIO_ENCODER_E1A_IIDX                               (DL_GPIO_IIDX_DIO21)
-#define GPIO_ENCODER_E1A_PIN                                    (DL_GPIO_PIN_21)
-#define GPIO_ENCODER_E1A_IOMUX                                   (IOMUX_PINCM49)
+/* Defines for E1A: GPIOB.19 with pinCMx 45 on package pin 16 */
+#define GPIO_ENCODER_E1A_IIDX                               (DL_GPIO_IIDX_DIO19)
+#define GPIO_ENCODER_E1A_PIN                                    (DL_GPIO_PIN_19)
+#define GPIO_ENCODER_E1A_IOMUX                                   (IOMUX_PINCM45)
 /* Defines for E2A: GPIOB.26 with pinCMx 57 on package pin 28 */
 #define GPIO_ENCODER_E2A_IIDX                               (DL_GPIO_IIDX_DIO26)
 #define GPIO_ENCODER_E2A_PIN                                    (DL_GPIO_PIN_26)
 #define GPIO_ENCODER_E2A_IOMUX                                   (IOMUX_PINCM57)
+/* Port definition for Pin Group OLED */
+#define OLED_PORT                                                        (GPIOB)
+
+/* Defines for RES: GPIOB.16 with pinCMx 33 on package pin 4 */
+#define OLED_RES_PIN                                            (DL_GPIO_PIN_16)
+#define OLED_RES_IOMUX                                           (IOMUX_PINCM33)
+/* Defines for DC: GPIOB.17 with pinCMx 43 on package pin 14 */
+#define OLED_DC_PIN                                             (DL_GPIO_PIN_17)
+#define OLED_DC_IOMUX                                            (IOMUX_PINCM43)
+/* Defines for CS: GPIOB.20 with pinCMx 48 on package pin 19 */
+#define OLED_CS_PIN                                             (DL_GPIO_PIN_20)
+#define OLED_CS_IOMUX                                            (IOMUX_PINCM48)
+/* Port definition for Pin Group GPIO_KEYS */
+#define GPIO_KEYS_PORT                                                   (GPIOB)
+
+/* Defines for K1: GPIOB.21 with pinCMx 49 on package pin 20 */
+#define GPIO_KEYS_K1_PIN                                        (DL_GPIO_PIN_21)
+#define GPIO_KEYS_K1_IOMUX                                       (IOMUX_PINCM49)
+/* Defines for K2: GPIOB.23 with pinCMx 51 on package pin 22 */
+#define GPIO_KEYS_K2_PIN                                        (DL_GPIO_PIN_23)
+#define GPIO_KEYS_K2_IOMUX                                       (IOMUX_PINCM51)
+/* Defines for K3: GPIOB.24 with pinCMx 52 on package pin 23 */
+#define GPIO_KEYS_K3_PIN                                        (DL_GPIO_PIN_24)
+#define GPIO_KEYS_K3_IOMUX                                       (IOMUX_PINCM52)
 
 
 
@@ -213,6 +256,7 @@ void SYSCFG_DL_PWM_MOTOR_init(void);
 void SYSCFG_DL_CLOCK_init(void);
 void SYSCFG_DL_UART_CAM_init(void);
 void SYSCFG_DL_UART_IMU_init(void);
+void SYSCFG_DL_SPI_OLED_init(void);
 void SYSCFG_DL_DMA_init(void);
 
 void SYSCFG_DL_SYSTICK_init(void);

@@ -39,6 +39,7 @@
 #include "drv_led.h"
 #include "drv_motor.h"
 #include "drv_uart.h"
+#include "drv_key.h"
 #include "app_camera_uart.h"
 #include "drv_jy61p.h"
 #include "drv_encoder.h"
@@ -46,12 +47,17 @@
 #include "src/utils/pid.h"
 #include "src/config.h"
 #include "app_chassis_task.h"
+#include "key_logic.h"
+#include "oled.h"
+#include "app_oled_display.h"
+
 
 // 变量创建区
 volatile uint32_t uwTick_Motor_Set_Point = 0;   // 控制Motor_Proc的执行速度
 volatile uint32_t uwTick_IMU_Print_Point = 0;   // 控制IMU数据打印的执行速度
-volatile uint32_t uwTick_PID_Control_Point = 0; // 控制PID实时控制的执行速度（CLOCK采样周期）
 volatile uint32_t uwTick_Chassis_Control_Point = 0; // 控制小车底盘闭环控制的执行速度
+volatile uint32_t uwTick_OLED_Set_Point = 0;    // 控制 OLED_Proc 的执行速度
+volatile uint32_t uwTick_Key_Set_Point = 0;     // 控制 Key_Scan 的执行速度
 
 // 打印缓冲区
 static char g_print_buffer[128];
@@ -65,8 +71,9 @@ static uint8_t g_calibration_started = 0;
 void Motor_Proc(void);
 void IMU_Proc(void);
 void Calibration_Proc(void);
-void PID_Control_Proc(void);
 void Chassis_Control_Proc(void);
+void OLED_Proc(void);
+void Key_Proc(void);
 
 int main(void)
 {
@@ -76,25 +83,37 @@ int main(void)
     // 初始化 UART0（摄像头）
     uart_init();
     camera_uart_init();
+    // 初始化 OLED 显示
+    OLED_Init();
+    OLED_Clear();
+    OLED_ShowString(4, 0, (uint8_t *)"System Init", 12, 1);
+    OLED_ShowString(4, 12, (uint8_t *)"Loading...", 12, 1);
+    OLED_Refresh();
+
+    // 初始化按键驱动
+    Key_Init();
+    
+    // 初始化按键逻辑
+    Key_Logic_Init();
+
+    // 初始化OLED显示模块
+    OLED_Display_Init();
+
     
     // 初始化 UART1（IMU）
     jy61p_init();
     
     // 初始化编码器驱动
-    EncoderInit();
+    // EncoderInit();
     
     // 初始化电机 PID 闭环控制
-    MotorPID_Init();
+    // MotorPID_Init();
     
     // 初始化小车底盘控制模块
     ChassisInit();
     
-    // 使能编码器相关中断
-    NVIC_EnableIRQ(GPIOB_INT_IRQn);      // GPIOB - 编码器GPIO中断
-    NVIC_EnableIRQ(CLOCK_INST_INT_IRQN); // TIMA0 - 时钟定时器
-    
     // 启动编码器采样
-    EncoderStart();
+    // EncoderStart();
     
     // 启动校准（采集 20 个样本）
     jy61p_start_calibration(20);
@@ -103,14 +122,20 @@ int main(void)
     // 使能全局中断（必须在所有初始化完成后调用）
     __enable_irq();
 
+    // 显示初始化完成
+    OLED_Display_Update();
+
     
 
     while (1) {
         Motor_Proc();
-        PID_Control_Proc();
+        // PID_Control_Proc(); 
         Calibration_Proc();
         IMU_Proc();
         Chassis_Control_Proc();  // 小车底盘闭环控制
+        // Key_Proc();             // 按键扫描和逻辑处理
+        // OLED_Proc();            // OLED显示更新
+
     }
 }
 
@@ -205,29 +230,6 @@ void IMU_Proc(void)
 }
 
 /**
- * @brief PID 实时控制处理函数
- *
- * 在 CLOCK 定时器采样周期（20ms）内执行 PID 控制
- * 根据编码器反馈速度和目标速度计算 PID 输出，
- * 实时调整电机 PWM 占空比
- */
-void PID_Control_Proc(void)
-{
-    // CLOCK 定时器采样周期为 20ms
-    // 每个采样周期执行一次 PID 控制
-    if ((uwTick - uwTick_PID_Control_Point) < 20) {
-        return;
-    }
-    uwTick_PID_Control_Point = uwTick;
-    
-    // 执行 PID 闭环控制
-    // 根据目标速度和编码器反馈速度计算 PID 输出
-//    ForwardPID(10000);
-		
-    // Forward(500);  // 注释掉原有的简单前进控制，改用小车底盘闭环控制
-}
-
-/**
  * @brief 小车底盘闭环控制处理函数
  *
  * 功能：
@@ -276,3 +278,49 @@ void Chassis_Control_Proc(void)
     //     }
     // }
 }
+
+/**
+ * @brief 按键处理函数（减速调用）
+ *
+ * 执行周期：10ms
+ * 功能：
+ * - 扫描按键状态
+ * - 处理按键事件
+ */
+void Key_Proc(void)
+{
+    // 减速控制：每 10ms 执行一次
+    if ((uwTick - uwTick_Key_Set_Point) < 10) {
+        return;
+    }
+    uwTick_Key_Set_Point = uwTick;
+    
+    // 扫描按键状态
+    Key_Scan();
+    
+    // 处理按键逻辑
+    Key_Logic_Process();
+}
+
+// ============ OLED 显示减速函数 ============
+/**
+ * @brief OLED 显示处理函数（减速调用）
+ *
+ * 执行周期：200ms
+ * 功能：
+ * - 显示当前任务ID
+ * - 显示系统状态（IDLE/RUNNING）
+ * - 显示按键提示
+ */
+void OLED_Proc(void)
+{
+    // 减速控制：每 200ms 执行一次
+    if ((uwTick - uwTick_OLED_Set_Point) < 200) {
+        return;
+    }
+    uwTick_OLED_Set_Point = uwTick;
+    
+    // 更新OLED显示
+    OLED_Display_Update();
+}
+
