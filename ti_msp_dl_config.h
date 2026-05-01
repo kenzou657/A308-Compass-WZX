@@ -105,6 +105,14 @@ bool SYSCFG_DL_SYSCTL_SYSPLL_init(void);
 
 
 
+/* Defines for CLOCK */
+#define CLOCK_INST                                                       (TIMA0)
+#define CLOCK_INST_IRQHandler                                   TIMA0_IRQHandler
+#define CLOCK_INST_INT_IRQN                                     (TIMA0_INT_IRQn)
+#define CLOCK_INST_LOAD_VALUE                                            (1999U)
+
+
+
 /* Defines for UART_CAM */
 #define UART_CAM_INST                                                      UART0
 #define UART_CAM_INST_FREQUENCY                                          4000000
@@ -167,6 +175,28 @@ bool SYSCFG_DL_SYSCTL_SYSPLL_init(void);
 #define GPIO_MOTOR_DIR_MOTOR_B_DIR_PORT                                  (GPIOB)
 #define GPIO_MOTOR_DIR_MOTOR_B_DIR_PIN                          (DL_GPIO_PIN_14)
 #define GPIO_MOTOR_DIR_MOTOR_B_DIR_IOMUX                         (IOMUX_PINCM31)
+/* Port definition for Pin Group GPIO_ENCODER */
+#define GPIO_ENCODER_PORT                                                (GPIOB)
+
+/* Defines for E1B: GPIOB.20 with pinCMx 48 on package pin 19 */
+// pins affected by this interrupt request:["E1B","E2B","E1A","E2A"]
+#define GPIO_ENCODER_INT_IRQN                                   (GPIOB_INT_IRQn)
+#define GPIO_ENCODER_INT_IIDX                   (DL_INTERRUPT_GROUP1_IIDX_GPIOB)
+#define GPIO_ENCODER_E1B_IIDX                               (DL_GPIO_IIDX_DIO20)
+#define GPIO_ENCODER_E1B_PIN                                    (DL_GPIO_PIN_20)
+#define GPIO_ENCODER_E1B_IOMUX                                   (IOMUX_PINCM48)
+/* Defines for E2B: GPIOB.25 with pinCMx 56 on package pin 27 */
+#define GPIO_ENCODER_E2B_IIDX                               (DL_GPIO_IIDX_DIO25)
+#define GPIO_ENCODER_E2B_PIN                                    (DL_GPIO_PIN_25)
+#define GPIO_ENCODER_E2B_IOMUX                                   (IOMUX_PINCM56)
+/* Defines for E1A: GPIOB.21 with pinCMx 49 on package pin 20 */
+#define GPIO_ENCODER_E1A_IIDX                               (DL_GPIO_IIDX_DIO21)
+#define GPIO_ENCODER_E1A_PIN                                    (DL_GPIO_PIN_21)
+#define GPIO_ENCODER_E1A_IOMUX                                   (IOMUX_PINCM49)
+/* Defines for E2A: GPIOB.26 with pinCMx 57 on package pin 28 */
+#define GPIO_ENCODER_E2A_IIDX                               (DL_GPIO_IIDX_DIO26)
+#define GPIO_ENCODER_E2A_PIN                                    (DL_GPIO_PIN_26)
+#define GPIO_ENCODER_E2A_IOMUX                                   (IOMUX_PINCM57)
 
 
 
@@ -180,6 +210,7 @@ void SYSCFG_DL_SYSCTL_init(void);
 
 bool SYSCFG_DL_SYSCTL_SYSPLL_init(void);
 void SYSCFG_DL_PWM_MOTOR_init(void);
+void SYSCFG_DL_CLOCK_init(void);
 void SYSCFG_DL_UART_CAM_init(void);
 void SYSCFG_DL_UART_IMU_init(void);
 void SYSCFG_DL_DMA_init(void);
