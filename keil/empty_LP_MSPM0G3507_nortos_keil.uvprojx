@@ -438,6 +438,16 @@
               <FileType>5</FileType>
               <FilePath>..\src\app\app_camera_uart.h</FilePath>
             </File>
+            <File>
+              <FileName>app_chassis_task.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\src\app\app_chassis_task.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_chassis_task.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\src\app\app_chassis_task.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -518,6 +528,16 @@
               <FileType>5</FileType>
               <FilePath>..\src\drivers\drv_encoder.h</FilePath>
             </File>
+            <File>
+              <FileName>drv_chassis.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\src\drivers\drv_chassis.c</FilePath>
+            </File>
+            <File>
+              <FileName>drv_chassis.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\src\drivers\drv_chassis.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -552,6 +572,16 @@
               <FileName>timer.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\src\utils\timer.h</FilePath>
+            </File>
+            <File>
+              <FileName>pid.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\src\utils\pid.c</FilePath>
+            </File>
+            <File>
+              <FileName>pid.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\src\utils\pid.h</FilePath>
             </File>
           </Files>
         </Group>

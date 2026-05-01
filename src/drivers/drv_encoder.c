@@ -113,12 +113,19 @@ int16_t EncoderGetFilteredSpeed(uint8_t encoder_id)
 
 /**
  * @brief 获取编码器线速度（mm/s）
+ * @note 电机B极性与A相反，返回值加负号以保持一致性
  */
 int16_t EncoderGetSpeed(uint8_t encoder_id)
 {
     if (encoder_id >= ENCODER_COUNT) {
         return 0;
     }
+    
+    // 电机B极性与A相反，需要加负号
+    if (encoder_id == ENCODER_B) {
+        return -g_encoder_state[encoder_id].speed_mmps;
+    }
+    
     return g_encoder_state[encoder_id].speed_mmps;
 }
 

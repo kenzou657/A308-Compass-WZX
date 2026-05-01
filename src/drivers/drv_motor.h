@@ -13,7 +13,7 @@
 
 /* ============ PWM占空比范围 ============ */
 #define PWM_MIN             0       // 最小占空比（停止）
-#define PWM_MAX             1000    // 最大占空比（全速）
+#define PWM_MAX             700    // 最大占空比（全速）
 
 /* ============ 底层GPIO控制宏 ============ */
 
@@ -98,5 +98,67 @@ void TurnRight(uint16_t speed);
  * @brief 小车停止
  */
 void Halt(void);
+
+/* ============ PID 闭环控制函数 ============ */
+
+/**
+ * @brief 初始化电机 PID 闭环控制
+ * @note 在 main 函数中调用，初始化两个电机的 PID 控制器
+ */
+void MotorPID_Init(void);
+
+/**
+ * @brief 设置电机 A 的目标速度（mm/s），使用 PID 闭环控制
+ * @param target_speed: 目标速度（mm/s），范围 -25600 ~ 25600
+ * @note 正值为正转，负值为反转
+ */
+void MotorA_SetSpeedPID(int16_t target_speed);
+
+/**
+ * @brief 设置电机 B 的目标速度（mm/s），使用 PID 闭环控制
+ * @param target_speed: 目标速度（mm/s），范围 -25600 ~ 25600
+ * @note 正值为正转，负值为反转
+ */
+void MotorB_SetSpeedPID(int16_t target_speed);
+
+/**
+ * @brief 设置两个电机的目标速度（mm/s），使用 PID 闭环控制
+ * @param target_speed_a: 电机 A 目标速度（mm/s）
+ * @param target_speed_b: 电机 B 目标速度（mm/s）
+ */
+void Motor_SetSpeedPID(int16_t target_speed_a, int16_t target_speed_b);
+
+/**
+ * @brief 将速度值（mm/s）映射为 PWM 占空比
+ * @param speed_mmps: 速度值（mm/s）
+ * @return PWM 占空比（0-700）
+ */
+uint16_t Speed_To_PWM(int16_t speed_mmps);
+
+/**
+ * @brief 小车前进（PID 闭环控制）
+ * @param speed: 目标速度（mm/s），范围 0 ~ 25600
+ */
+void ForwardPID(int16_t speed);
+
+/**
+ * @brief 小车后退（PID 闭环控制）
+ * @param speed: 目标速度（mm/s），范围 0 ~ 25600
+ */
+void BackwardPID(int16_t speed);
+
+/**
+ * @brief 小车原地左转（PID 闭环控制）
+ * @param speed: 目标速度（mm/s），范围 0 ~ 25600
+ * @note 左电机反转，右电机正转，实现原地左转
+ */
+void TurnLeftPID(int16_t speed);
+
+/**
+ * @brief 小车原地右转（PID 闭环控制）
+ * @param speed: 目标速度（mm/s），范围 0 ~ 25600
+ * @note 右电机反转，左电机正转，实现原地右转
+ */
+void TurnRightPID(int16_t speed);
 
 #endif /* _DRV_MOTOR_H_ */
