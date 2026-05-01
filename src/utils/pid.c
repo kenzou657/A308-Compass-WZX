@@ -141,23 +141,23 @@ void PID_Position_Init(PID_Position_t *pid, int16_t kp, int16_t ki, int16_t kd,
  * - ∑e(i) = 误差积分累加值
  * - u(k) = 绝对输出
  */
-int16_t PID_Position_Calculate(PID_Position_t *pid, int16_t setpoint, int16_t feedback)
+int32_t PID_Position_Calculate(PID_Position_t *pid, int32_t setpoint, int32_t feedback)
 {
     if (pid == NULL) {
         return 0;
     }
     
     int32_t temp;           // 临时变量，用于中间计算
-    int16_t error;          // 当前误差 e(k)
+    int32_t error;          // 当前误差 e(k)
     int32_t output;         // 最终输出 u(k)
     
     // 1. 计算当前误差
     error = setpoint - feedback;
     
-    // 2. 计算比例项：Kp*e(k)
-    output = (int32_t)pid->kp * error;
+    // 2. 计算比例项：Kp*e(k) / 1000
+    output = ((int32_t)pid->kp * error) / 100;
     
-    // 3. 计算积分项：Ki*∑e(i)
+    // 3. 计算积分项：Ki*∑e(i) / 1000
     // 先累加误差
     pid->integral_sum += error;
     
@@ -168,10 +168,10 @@ int16_t PID_Position_Calculate(PID_Position_t *pid, int16_t setpoint, int16_t fe
         pid->integral_sum = pid->integral_min;
     }
     
-    output += (int32_t)pid->ki * pid->integral_sum;
+    output += ((int32_t)pid->ki * pid->integral_sum) / 100;
     
-    // 4. 计算微分项：Kd[e(k) - e(k-1)]
-    output += (int32_t)pid->kd * (error - pid->error_prev);
+    // 4. 计算微分项：Kd[e(k) - e(k-1)] / 1000
+    output += ((int32_t)pid->kd * (error - pid->error_prev)) / 100;
     
     // 5. 输出限幅
     if (output > pid->output_max) {
@@ -183,7 +183,7 @@ int16_t PID_Position_Calculate(PID_Position_t *pid, int16_t setpoint, int16_t fe
     // 6. 更新历史数据
     pid->error_prev = error;
     
-    return (int16_t)output;
+    return output;
 }
 
 /**

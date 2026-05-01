@@ -1,16 +1,16 @@
 /**
  * @file drv_chassis.h
  * @brief 小车底盘运动控制模块 - 头文件
- * 
+ *
  * 功能：
- * - 基于陀螺仪 Yaw 角的闭环方向控制（位置式 PID）
+ * - 基于陀螺仪 Yaw 角的闭环方向控制（P 环）
  * - 基于运行时间的位移控制（uwTick 计时）
  * - 差速控制实现转向
  * - 死区机制防止抖动
- * 
+ *
  * 控制策略：
- * - 方向控制：left_pwm = base_pwm - pid_output
- *             right_pwm = base_pwm + pid_output
+ * - 方向控制：left_pwm = base_pwm - pwm_delta
+ *             right_pwm = base_pwm + pwm_delta
  * - 位移控制：通过 uwTick 计算运行时间
  * - 死区判断：|error| < 0.5° 时不动作
  */
@@ -20,7 +20,6 @@
 
 #include <stdint.h>
 #include "ti_msp_dl_config.h"
-#include "../utils/pid.h"
 #include "../config.h"
 
 /* ============ 小车运动状态定义 ============ */
@@ -35,12 +34,12 @@
 
 /**
  * @brief 小车底盘控制结构体
- * 
- * 包含运动目标、当前状态、反馈数据、PID 控制器等
+ *
+ * 包含运动目标、当前状态、反馈数据等
  */
 typedef struct {
     /* ===== 运动目标 ===== */
-    int16_t target_yaw;             // 目标偏航角（°×100）
+    int32_t target_yaw;             // 目标偏航角（°×100）
     uint32_t motion_duration_ms;    // 运动持续时间（ms）
     uint16_t base_pwm;              // 基础 PWM 占空比（0-700）
     uint8_t direction;              // 运动方向（前进/后退）
@@ -51,16 +50,14 @@ typedef struct {
     uint32_t elapsed_ms;            // 已运行时间（ms）
     
     /* ===== 反馈数据 ===== */
-    int16_t current_yaw;            // 当前偏航角（°×100）
-    int16_t yaw_error;              // 偏航角误差（target - current）
-    int16_t pid_output;             // PID 输出（差速值）
+    int32_t current_yaw;            // 当前偏航角（°×100）
+    int32_t yaw_error;              // 偏航角误差（target - current）
+    int32_t pid_output;             // PID 输出（差速值）
     
     /* ===== 电机控制 ===== */
-    uint16_t motor_left_pwm;        // 左电机 PWM 占空比
-    uint16_t motor_right_pwm;       // 右电机 PWM 占空比
-    
-    /* ===== PID 控制器 ===== */
-    PID_Position_t yaw_pid;         // 陀螺仪 Yaw 角位置式 PID
+    int16_t motor_left_pwm;        // 左电机 PWM 占空比
+    int16_t motor_right_pwm;       // 右电机 PWM 占空比
+    uint8_t is_turning;             // 原地转弯标志（base_pwm == 0 时为 1）
     
     /* ===== 调试信息 ===== */
     uint32_t update_count;          // 更新次数计数
@@ -74,12 +71,11 @@ extern Chassis_t g_chassis;
 
 /**
  * @brief 初始化小车底盘控制模块
- * 
+ *
  * 功能：
- * - 初始化陀螺仪 Yaw 角 PID 控制器
  * - 初始化状态变量
  * - 停止所有电机
- * 
+ *
  * @note 必须在 SYSCFG_DL_init() 和 MotorInit() 之后调用
  */
 void ChassisInit(void);
@@ -144,12 +140,5 @@ Chassis_t* ChassisGetState(void);
  * @return 1: 正在运动，0: 停止状态
  */
 uint8_t ChassisIsMoving(void);
-
-/**
- * @brief 重置陀螺仪 PID 控制器
- * 
- * @note 在切换运动模式或出现异常时调用
- */
-void ChassisResetPID(void);
 
 #endif /* _DRV_CHASSIS_H_ */

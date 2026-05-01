@@ -103,7 +103,7 @@ int main(void)
     // 使能全局中断（必须在所有初始化完成后调用）
     __enable_irq();
 
-    ChassisTaskStart();
+    
 
     while (1) {
         Motor_Proc();
@@ -124,6 +124,7 @@ void Calibration_Proc(void)
         // 可选：打印校准完成信息
         sprintf(g_print_buffer, "Calibration Done\r\n");
         uart_send_data((uint8_t *)g_print_buffer, sizeof(g_print_buffer));
+        ChassisTaskStart();
     }
 }
 
@@ -180,6 +181,7 @@ void IMU_Proc(void)
     uwTick_IMU_Print_Point = uwTick;
 
     jy61p_angle_t angle;
+
     if (jy61p_get_angle(&angle) == 0) {
         // 使用 sprintf 格式化偏航角数据（整数格式，单位：0.01°）
         // yaw_deg_x100 = 100 表示 1.00°

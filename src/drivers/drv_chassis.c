@@ -12,6 +12,7 @@
 #include "drv_chassis.h"
 #include "drv_motor.h"
 #include "drv_jy61p.h"
+#include "../config.h"
 #include <stdlib.h>
 
 /* ============ 全局变量定义 ============ */
@@ -32,18 +33,6 @@ static void Chassis_UpdateMotors(void);
  */
 void ChassisInit(void)
 {
-    // 初始化陀螺仪 Yaw 角位置式 PID
-    PID_Position_Init(
-        &g_chassis.yaw_pid,
-        GYRO_YAW_PID_KP,
-        GYRO_YAW_PID_KI,
-        GYRO_YAW_PID_KD,
-        GYRO_PID_INTEGRAL_MAX,
-        GYRO_PID_INTEGRAL_MIN,
-        GYRO_PID_OUTPUT_MAX,
-        GYRO_PID_OUTPUT_MIN
-    );
-    
     // 初始化状态变量
     g_chassis.state = CHASSIS_STATE_IDLE;
     g_chassis.target_yaw = 0;
@@ -88,8 +77,8 @@ void ChassisSetMotion(int16_t target_yaw, uint32_t duration_ms, uint16_t base_pw
     g_chassis.motion_start_tick = uwTick;
     g_chassis.elapsed_ms = 0;
     
-    // 重置 PID 控制器
-    PID_Position_Reset(&g_chassis.yaw_pid);
+    // 设置原地转弯标志（base_pwm == 0 时为原地转弯）
+    g_chassis.is_turning = (base_pwm == 0) ? 1 : 0;
     
     // 设置为运动状态
     g_chassis.state = CHASSIS_STATE_MOVING;
@@ -127,10 +116,10 @@ void ChassisUpdate(void)
         return;
     }
     
-    // ===== 4. 计算 PID 输出（带死区判断） =====
-    g_chassis.pid_output = Chassis_CalculatePID();
+    // ===== 4. 计算偏航角误差 =====
+    g_chassis.yaw_error = g_chassis.target_yaw - g_chassis.current_yaw;
     
-    // ===== 5. 更新电机 PWM（差速控制） =====
+    // ===== 5. 更新电机 PWM（P 环差速控制） =====
     Chassis_UpdateMotors();
 }
 
@@ -141,9 +130,6 @@ void ChassisStop(void)
 {
     // 停止所有电机
     MotorStopAll();
-    
-    // 重置 PID 控制器
-    PID_Position_Reset(&g_chassis.yaw_pid);
     
     // 清除运动状态
     g_chassis.state = CHASSIS_STATE_IDLE;
@@ -168,14 +154,6 @@ uint8_t ChassisIsMoving(void)
     return (g_chassis.state == CHASSIS_STATE_MOVING);
 }
 
-/**
- * @brief 重置陀螺仪 PID 控制器
- */
-void ChassisResetPID(void)
-{
-    PID_Position_Reset(&g_chassis.yaw_pid);
-}
-
 /* ============ 内部辅助函数实现 ============ */
 
 /**
@@ -195,62 +173,88 @@ static int16_t Chassis_LimitPWM(int32_t pwm)
 }
 
 /**
- * @brief 计算 PID 输出（带死区判断）
- * @return PID 输出值（差速值）
- */
-static int16_t Chassis_CalculatePID(void)
-{
-    int16_t pid_output;
-    
-    // 计算误差
-    g_chassis.yaw_error = g_chassis.target_yaw - g_chassis.current_yaw;
-    
-    // 死区判断：误差小于 0.5° 时不动作
-    if (abs(g_chassis.yaw_error) < GYRO_DEADZONE) {
-        pid_output = 0;
-    } else {
-        // 执行位置式 PID 计算
-        pid_output = PID_Position_Calculate(
-            &g_chassis.yaw_pid,
-            g_chassis.target_yaw,
-            g_chassis.current_yaw
-        );
-    }
-    
-    return pid_output;
-}
-
-/**
  * @brief 更新电机 PWM（差速控制）
- * 
- * 差速控制策略：
- * - 当 PID 输出为正（需要向右转）：
- *   左电机减速（base_pwm - pid_output）
- *   右电机加速（base_pwm + pid_output）
- * - 当 PID 输出为负（需要向左转）：
- *   左电机加速（base_pwm - pid_output）
- *   右电机减速（base_pwm + pid_output）
+ *
+ * 运动模式区分：
+ * 1. 直行模式（base_pwm > 0）：
+ *    - 使用直行专用系数 GYRO_YAW_PID_KP
+ *    - 差速控制：左电机 = base_pwm - pwm_delta，右电机 = base_pwm + pwm_delta
+ *
+ * 2. 转弯模式（base_pwm == 0）：
+ *    - 使用转弯专用系数 GYRO_YAW_PID_KP_TURN
+ *    - 转弯方向由 yaw_error 的正负决定：
+ *      * yaw_error > 0：向右转（左电机前进，右电机后退）
+ *      * yaw_error < 0：向左转（左电机后退，右电机前进）
  */
 static void Chassis_UpdateMotors(void)
 {
-    int32_t left_pwm_raw, right_pwm_raw;
+    volatile int32_t left_pwm_raw, right_pwm_raw;
+    volatile int32_t pwm_delta;  // PWM 差速值
+    int32_t kp_value;   // 当前使用的 Kp 系数
     
-    // 计算差速 PWM（原始值）
-    left_pwm_raw = g_chassis.base_pwm - g_chassis.pid_output;
-    right_pwm_raw = g_chassis.base_pwm + g_chassis.pid_output;
+    // ===== 1. 根据运动模式选择 Kp 系数 =====
+    if (g_chassis.base_pwm > 0) {
+        // 直行模式：使用直行专用系数
+        kp_value = GYRO_YAW_PID_KP;
+    } else {
+        // 转弯模式（base_pwm == 0）：使用转弯专用系数
+        kp_value = GYRO_YAW_PID_KP_TURN;
+    }
     
-    // 限幅处理
+    // ===== 2. 计算 PWM 差速值 =====
+    // 公式：PWM_delta = yaw_error × Kp / 1000 × GYRO_PID_TO_PWM_NUM / GYRO_PID_TO_PWM_DEN
+    // 简化为：PWM_delta = yaw_error × (Kp × GYRO_PID_TO_PWM_NUM) / (1000 × GYRO_PID_TO_PWM_DEN)
+    pwm_delta = ((int32_t)g_chassis.yaw_error * kp_value * GYRO_PID_TO_PWM_NUM) /
+               (1000 * GYRO_PID_TO_PWM_DEN);
+    
+    // ===== 3. 限幅处理（防止差速值过大） =====
+    if (pwm_delta > GYRO_PID_OUTPUT_MAX) {
+        pwm_delta = GYRO_PID_OUTPUT_MAX;
+    } else if (pwm_delta < GYRO_PID_OUTPUT_MIN) {
+        pwm_delta = GYRO_PID_OUTPUT_MIN;
+    }
+    
+    // ===== 4. 根据运动模式计算电机 PWM =====
+    if (g_chassis.base_pwm > 0) {
+        // 直行模式：差速控制
+        left_pwm_raw = g_chassis.base_pwm - pwm_delta;
+        right_pwm_raw = g_chassis.base_pwm + pwm_delta;
+    } else {
+        // 转弯模式：原地转弯
+        // yaw_error > 0 时向右转：左电机前进，右电机后退
+        // yaw_error < 0 时向左转：左电机后退，右电机前进
+        left_pwm_raw = -pwm_delta;      // 左电机 PWM（正值前进，负值后退）
+        right_pwm_raw = pwm_delta;    // 右电机 PWM（与左电机相反）
+    }
+    
+    // ===== 5. 限幅处理 =====
     g_chassis.motor_left_pwm = Chassis_LimitPWM(left_pwm_raw);
     g_chassis.motor_right_pwm = Chassis_LimitPWM(right_pwm_raw);
     
-    // 根据运动方向设置电机
-    if (g_chassis.direction == CHASSIS_DIR_FORWARD) {
-        // 前进
-        MotorASet(MOTOR_DIR_FORWARD, g_chassis.motor_left_pwm);
-        MotorBSet(MOTOR_DIR_FORWARD, g_chassis.motor_right_pwm);
+    // ===== 6. 根据运动方向和模式设置电机 =====
+    if (g_chassis.base_pwm > 0) {
+        // 直行模式：根据 direction 设置方向
+        if (g_chassis.direction == CHASSIS_DIR_FORWARD) {
+            MotorASet(MOTOR_DIR_FORWARD, g_chassis.motor_left_pwm);
+            MotorBSet(MOTOR_DIR_FORWARD, g_chassis.motor_right_pwm);
+        } else {
+            MotorASet(MOTOR_DIR_REVERSE, g_chassis.motor_left_pwm);
+            MotorBSet(MOTOR_DIR_REVERSE, g_chassis.motor_right_pwm);
+        }
     } else {
-        // 后退
-        MotorASet(MOTOR_DIR_REVERSE, g_chassis.motor_left_pwm);
-        MotorBSet(MOTOR_DIR_REVERSE, g_chassis.motor_right_pwm);
+        // 转弯模式：根据 pwm_delta 的正负决定方向
+        // pwm_delta > 0：向右转（左前右后）
+        // pwm_delta < 0：向左转（左后右前）
+        if (g_chassis.motor_left_pwm >= 0) {
+            MotorASet(MOTOR_DIR_FORWARD, g_chassis.motor_left_pwm);
+        } else {
+            MotorASet(MOTOR_DIR_REVERSE, -g_chassis.motor_left_pwm);
+        }
+        
+        if (g_chassis.motor_right_pwm >= 0) {
+            MotorBSet(MOTOR_DIR_FORWARD, g_chassis.motor_right_pwm);
+        } else {
+            MotorBSet(MOTOR_DIR_REVERSE, -g_chassis.motor_right_pwm);
+        }
     }
 }

@@ -117,18 +117,12 @@ void jy61p_isr_handler(void)
 /* ============ 数据获取函数 ============ */
 int jy61p_get_angle(jy61p_angle_t *angle)
 {
-    if (g_jy61p_rx.angle_updated == 0) {
-        return -1;
-    }
-    
+    // 直接返回最新缓存的数据，不检查 angle_updated
     angle->yaw = g_jy61p_rx.angle.yaw;
-    // 应用零点偏移
     angle->yaw_deg_x100 = g_jy61p_rx.angle.yaw_deg_x100 - g_jy61p_rx.angle.yaw_offset;
     angle->yaw_offset = g_jy61p_rx.angle.yaw_offset;
     
-    g_jy61p_rx.angle_updated = 0;
-    
-    return 0;
+    return 0;  // 总是成功
 }
 
 void jy61p_start_calibration(uint32_t sample_count)

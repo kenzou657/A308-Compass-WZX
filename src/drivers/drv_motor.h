@@ -12,8 +12,8 @@
 #define MOTOR_B             1
 
 /* ============ PWM占空比范围 ============ */
-#define PWM_MIN             0       // 最小占空比（停止）
-#define PWM_MAX             700    // 最大占空比（全速）
+#define PWM_MIN             -350       // 最小占空比（停止）
+#define PWM_MAX             350    // 最大占空比（全速）
 
 /* ============ 底层GPIO控制宏 ============ */
 
