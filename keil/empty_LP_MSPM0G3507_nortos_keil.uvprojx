@@ -538,6 +538,31 @@
               <FileType>5</FileType>
               <FilePath>..\src\drivers\drv_chassis.h</FilePath>
             </File>
+            <File>
+              <FileName>oled.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\src\drivers\oled.c</FilePath>
+            </File>
+            <File>
+              <FileName>oled.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\src\drivers\oled.h</FilePath>
+            </File>
+            <File>
+              <FileName>oledfont.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\src\drivers\oledfont.h</FilePath>
+            </File>
+            <File>
+              <FileName>drv_key.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\src\drivers\drv_key.c</FilePath>
+            </File>
+            <File>
+              <FileName>drv_key.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\src\drivers\drv_key.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
