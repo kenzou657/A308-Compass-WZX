@@ -47,7 +47,9 @@
 #include "src/utils/pid.h"
 #include "src/config.h"
 #include "app_chassis_task.h"
+#include "key_logic.h"
 #include "oled.h"
+#include "app_oled_display.h"
 
 // 变量创建区
 volatile uint32_t uwTick_Motor_Set_Point = 0;   // 控制Motor_Proc的执行速度
@@ -83,6 +85,9 @@ int main(void)
     uart_init();
     camera_uart_init();
 
+    // 初始化 UART1（IMU）
+    jy61p_init();
+
      // 初始化 OLED 显示
     OLED_Init();
     OLED_Clear();
@@ -93,8 +98,11 @@ int main(void)
     // 初始化按键驱动
     Key_Init();
     
-    // 初始化 UART1（IMU）
-    jy61p_init();
+    // 初始化按键逻辑
+    Key_Logic_Init();
+
+    // 初始化OLED显示模块
+    OLED_Display_Init();
     
     // 初始化编码器驱动
     EncoderInit();
@@ -118,6 +126,10 @@ int main(void)
     
     // 使能全局中断（必须在所有初始化完成后调用）
     __enable_irq();
+
+    
+    // 显示初始化完成
+    OLED_Display_Update();
 
     
 
@@ -323,7 +335,7 @@ void Key_Proc(void)
 /**
  * @brief OLED 显示处理函数（减速调用）
  *
- * 执行周期：200ms
+ * 执行周期：500ms
  * 功能：
  * - 显示当前任务ID
  * - 显示系统状态（IDLE/RUNNING）
@@ -332,7 +344,7 @@ void Key_Proc(void)
 void OLED_Proc(void)
 {
     // 减速控制：每 200ms 执行一次
-    if ((uwTick - uwTick_OLED_Set_Point) < 200) {
+    if ((uwTick - uwTick_OLED_Set_Point) < 500) {
         return;
     }
     uwTick_OLED_Set_Point = uwTick;
