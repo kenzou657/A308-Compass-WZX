@@ -25,6 +25,7 @@ extern volatile uint32_t uwTick;  // 系统滴答计数（在 ti_msp_dl_config.c
 static int16_t Chassis_LimitPWM(int32_t pwm);
 static int16_t Chassis_CalculatePID(void);
 static void Chassis_UpdateMotors(void);
+static int16_t Chassis_NormalizeYawError(int16_t target_yaw, int16_t current_yaw);
 
 /* ============ 函数实现 ============ */
 
@@ -116,8 +117,8 @@ void ChassisUpdate(void)
         return;
     }
     
-    // ===== 4. 计算偏航角误差 =====
-    g_chassis.yaw_error = g_chassis.target_yaw - g_chassis.current_yaw;
+    // ===== 4. 计算偏航角误差（处理-180°边界跳变） =====
+    g_chassis.yaw_error = Chassis_NormalizeYawError(g_chassis.target_yaw, g_chassis.current_yaw);
     
     // ===== 5. 更新电机 PWM（P 环差速控制） =====
     Chassis_UpdateMotors();
@@ -265,4 +266,42 @@ static void Chassis_UpdateMotors(void)
             MotorBSet(MOTOR_DIR_REVERSE, -g_chassis.motor_right_pwm);
         }
     }
+}
+
+/**
+ * @brief 计算角度差值，处理-180°边界的跳变问题
+ *
+ * 功能：
+ * - 计算 target_yaw - current_yaw 的最小差值
+ * - 处理-180°和180°的等价性
+ * - 避免-175到175之间的跳变
+ *
+ * 例如：
+ * - target_yaw = -18000 (-180°), current_yaw = 17500 (175°)
+ *   直接相减：-18000 - 17500 = -35500（错误）
+ *   归一化后：-18000 - (-18500) = 500（正确，向右转）
+ *
+ * - target_yaw = -18000 (-180°), current_yaw = -17500 (-175°)
+ *   直接相减：-18000 - (-17500) = -500（正确）
+ *   归一化后：-18000 - (-17500) = -500（正确）
+ *
+ * @param target_yaw 目标角度（°×100，范围 [-18000, 18000)）
+ * @param current_yaw 当前角度（°×100，范围 [-18000, 18000)）
+ * @return 角度差值（°×100，范围 [-18000, 18000)）
+ */
+static int16_t Chassis_NormalizeYawError(int16_t target_yaw, int16_t current_yaw)
+{
+    int32_t error = (int32_t)target_yaw - (int32_t)current_yaw;
+    
+    /* 将误差归一化到 [-18000, 18000) 范围 */
+    /* 如果误差 > 18000，说明应该向反方向转（更短的路径） */
+    if (error > 18000) {
+        error -= 36000;
+    }
+    /* 如果误差 < -18000，说明应该向反方向转（更短的路径） */
+    else if (error < -18000) {
+        error += 36000;
+    }
+    
+    return (int16_t)error;
 }

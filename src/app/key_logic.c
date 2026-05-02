@@ -15,6 +15,7 @@
 #include "drv_buzzer.h"
 #include "app_task_1_line_tracking.h"
 #include "app_task_2_dual_point.h"
+#include "app_task_3_round_trip.h"
 
 /* ==================== 全局变量 ==================== */
 
@@ -87,6 +88,10 @@ void Key_Logic_Process(void)
                 else if (current_task == TASK_ID_2_DUAL_POINT) {
                     /* 任务2：设置两个目的地参数 */
                     Task2_SetTargetZones(g_param_setting.destination_1, g_param_setting.destination_2);
+                }
+                else if (current_task == TASK_ID_3_ROUND_TRIP) {
+                    /* 任务3：设置两个目的地参数 */
+                    Task3_SetTargetZones(g_param_setting.destination_1, g_param_setting.destination_2);
                 }
                 
                 /* 启动任务 */
