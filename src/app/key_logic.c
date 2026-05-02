@@ -14,6 +14,7 @@
 #include "drv_led.h"
 #include "drv_buzzer.h"
 #include "app_task_1_line_tracking.h"
+#include "app_task_2_dual_point.h"
 
 /* ==================== 全局变量 ==================== */
 
@@ -75,11 +76,17 @@ void Key_Logic_Process(void)
             
             /* K3: 启动当前任务或进入参数设置 */
             if (k3_event == KEY_EVENT_PRESSED) {
-                /* 如果是任务1，设置目的地参数 */
+                /* 获取当前任务ID */
                 TaskID_t current_task = TaskManager_GetCurrentTaskID();
+                
+                /* 根据任务类型设置参数 */
                 if (current_task == TASK_ID_1_LINE_TRACKING) {
-                    /* 根据参数设置中的 destination_1 设置任务1的目标区 */
+                    /* 任务1：设置单个目的地参数 */
                     Task1_SetTargetZone(g_param_setting.destination_1);
+                }
+                else if (current_task == TASK_ID_2_DUAL_POINT) {
+                    /* 任务2：设置两个目的地参数 */
+                    Task2_SetTargetZones(g_param_setting.destination_1, g_param_setting.destination_2);
                 }
                 
                 /* 启动任务 */

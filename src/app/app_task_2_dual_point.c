@@ -5,111 +5,475 @@
  * 功能描述：
  * - 循迹到目标区1，停止
  * - 停顿 2 秒
+ * - 原地旋转180度
+ * - 沿旋转后方向直行到路径交汇点
+ * - 转向目的地2方向
  * - 循迹到目标区2，停止
+ * - 蜂鸣器鸣响
  * 
  * 状态机流程：
- * IDLE → INIT → RUNNING(前往目标1) → RUNNING(停顿2s) → RUNNING(前往目标2) → SUCCESS/FAILED/TIMEOUT
+ * IDLE → INIT → RUNNING(前往目标1) → RUNNING(停顿2s) → RUNNING(旋转180°) 
+ * → RUNNING(直行到交汇点) → RUNNING(转向目标2) → RUNNING(前往目标2) → SUCCESS/FAILED/TIMEOUT
+ * 
+ * 实现要点：
+ * - 使用底盘任务模块执行多阶段运动
+ * - 基于 uwTick 进行时间控制
+ * - 每次进入任务都进行陀螺仪零点校准
+ * - 第一阶段：沿0角度运动到路径交汇点（5s）
+ * - 第一阶段转弯：从0°转弯到目标角度（2s）
+ * - 第一阶段直行：沿目标角度直行到目标1（5s）
+ * - 停顿2s
+ * - 旋转180度：从目标角度转弯到(目标角度+180°)（2s）
+ * - 直行到交汇点：沿(目标角度+180°)直行（5s）
+ * - 第二阶段转弯：从(目标角度+180°)转弯到目标2角度（2s）
+ * - 第二阶段直行：沿目标2角度直行到目标2（5s）
+ * - 完成任务后蜂鸣器响1s
  */
 
 #include "app_task_2_dual_point.h"
 #include "../drivers/drv_chassis.h"
 #include "../drivers/drv_buzzer.h"
+#include "../drivers/drv_jy61p.h"
 #include "../utils/timer.h"
+#include "../config.h"
+#include "app_chassis_task.h"
 #include <stdlib.h>
 
 /* ==================== 任务上下文结构 ==================== */
 
+/**
+ * @brief Task 2 上下文结构
+ */
 typedef struct {
-    TaskState_t state;
-    uint8_t target_zone_1;
-    uint8_t target_zone_2;
-    uint32_t start_time;
-    uint32_t elapsed_time;
-    uint32_t timeout_ms;
+    TaskState_t state;              /* 任务状态 */
+    uint8_t target_zone_1;          /* 目标区1编号（1-5） */
+    uint8_t target_zone_2;          /* 目标区2编号（1-5） */
+    uint32_t start_time;            /* 任务开始时间 */
+    uint32_t elapsed_time;          /* 已运行时间 */
+    uint32_t timeout_ms;            /* 超时时间 */
+    
+    /* 陀螺仪校准相关 */
+    uint8_t gyro_calibration_done;  /* 陀螺仪校准完成标志 */
+    uint32_t calibration_start_time;/* 校准开始时间 */
     
     /* 阶段控制 */
-    uint8_t phase;                  /* 0: 前往目标1, 1: 停顿2s, 2: 前往目标2 */
-    uint32_t phase_start_time;
+    uint8_t phase;                  /* 运行阶段：
+                                       0: 前往目标1
+                                       1: 停顿2s
+                                       2: 旋转180°
+                                       3: 直行到交汇点
+                                       4: 转向目标2
+                                       5: 前往目标2 */
+    uint32_t phase_start_time;      /* 当前阶段开始时间 */
     
-    /* 路径规划相关 */
-    uint16_t current_path_point;
-    uint32_t path_point_start_time;
-    uint8_t path_state;
+    /* 底盘任务相关 */
+    uint8_t chassis_task_running;   /* 底盘任务运行标志 */
     
-    uint32_t update_count;
+    /* 调试信息 */
+    uint32_t update_count;          /* 更新次数计数 */
 } Task2_Context_t;
 
+/* ==================== 全局变量 ==================== */
+
+/**
+ * @brief Task 2 上下文
+ */
 static Task2_Context_t g_task2_ctx;
+
+/* ==================== 外部变量声明 ==================== */
+
+/**
+ * @brief 系统滴答计数（1ms 周期）
+ */
 extern volatile uint32_t uwTick;
+
+/* ==================== 辅助函数 ==================== */
+
+/**
+ * @brief 根据目的地编号获取目标角度
+ * 
+ * @param destination 目的地编号（1-5）
+ * @return 目标角度（°×100）
+ */
+static int16_t Task2_GetTargetYaw(uint8_t destination)
+{
+    switch (destination) {
+        case 1:
+            return DESTINATION_1_YAW;
+        case 2:
+            return DESTINATION_2_YAW;
+        case 3:
+            return DESTINATION_3_YAW;
+        case 4:
+            return DESTINATION_4_YAW;
+        case 5:
+            return DESTINATION_5_YAW;
+        default:
+            return 0;
+    }
+}
+
+/**
+ * @brief 计算旋转180度后的目标角度
+ * 
+ * @param original_yaw 原始角度（°×100）
+ * @return 旋转180度后的角度（°×100）
+ */
+static int16_t Task2_RotateYaw180(int16_t original_yaw)
+{
+    int32_t rotated = (int32_t)original_yaw + 18000;  // 加180°
+    
+    /* 角度归一化到 [-18000, 18000) 范围 */
+    while (rotated >= 18000) {
+        rotated -= 36000;
+    }
+    while (rotated < -18000) {
+        rotated += 36000;
+    }
+    
+    return (int16_t)rotated;
+}
 
 /* ==================== 函数实现 ==================== */
 
+/**
+ * @brief 初始化 Task 2
+ * 
+ * 功能：
+ * - 初始化任务状态为 INIT
+ * - 启动陀螺仪零点校准
+ * - 记录任务开始时间
+ * - 设置超时时间
+ * 
+ * @note 必须在 TaskManager_StartTask() 中调用
+ */
 void Task2_Init(void)
 {
-    /* TODO: 实现初始化逻辑
-     * 
-     * 步骤：
-     * 1. 初始化任务状态为 TASK_STATE_INIT
-     * 2. 记录任务开始时间
-     * 3. 设置超时时间：g_task2_ctx.timeout_ms = 20000（20s）
-     * 4. 初始化阶段为 0（前往目标1）
-     * 5. 初始化路径规划
-     * 6. 启动底盘运动到目标1
-     * 7. 蜂鸣器提示
-     * 8. 设置任务状态为 TASK_STATE_RUNNING
-     */
+    /* 初始化任务状态为 INIT */
+    g_task2_ctx.state = TASK_STATE_INIT;
+    
+    /* 初始化时间相关变量 */
+    g_task2_ctx.start_time = 0;  /* 校准完成后再记录 */
+    g_task2_ctx.elapsed_time = 0;
+    
+    /* 设置超时时间：60s（足够完成两个目标点的循迹） */
+    g_task2_ctx.timeout_ms = 60000;
+    
+    /* 初始化陀螺仪校准标志 */
+    g_task2_ctx.gyro_calibration_done = 0;
+    g_task2_ctx.calibration_start_time = uwTick;
+    
+    /* 启动陀螺仪零点校准（采集20个样本） */
+    jy61p_start_calibration(GYRO_CALIBRATION_SAMPLES);
+    
+    /* 初始化底盘任务 */
+    ChassisTaskInit();
+    g_task2_ctx.chassis_task_running = 0;
+    
+    /* 初始化阶段为 0（前往目标1） */
+    g_task2_ctx.phase = 0;
+    g_task2_ctx.phase_start_time = 0;
+    
+    /* 初始化调试计数 */
+    g_task2_ctx.update_count = 0;
 }
 
+/**
+ * @brief Task 2 主循环
+ * 
+ * 功能：
+ * - 等待陀螺仪校准完成
+ * - 校准完成后启动底盘任务
+ * - 监控底盘任务执行状态
+ * - 根据阶段执行不同的逻辑
+ * - 任务完成后蜂鸣器响1s
+ * 
+ * @note 应在主循环中定期调用（建议 10ms 周期）
+ */
 void Task2_Run(void)
 {
-    /* TODO: 实现主循环逻辑
-     * 
-     * 步骤：
-     * 1. 检查任务状态
-     * 2. 计算已运行时间
-     * 3. 超时检查
-     * 4. 根据阶段执行不同的逻辑：
-     *    - 阶段0：前往目标1
-     *      执行路径规划，检查是否到达
-     *      到达后进入阶段1，蜂鸣器提示
-     *    - 阶段1：停顿2s
-     *      检查停顿时间是否到达
-     *      到达后初始化路径到目标2，进入阶段2
-     *    - 阶段2：前往目标2
-     *      执行路径规划，检查是否到达
-     *      到达后设置任务状态为 SUCCESS，蜂鸣器提示
-     * 5. 更新计数器
-     */
+    /* 检查任务状态：如果不是 INIT 或 RUNNING，直接返回 */
+    if (g_task2_ctx.state != TASK_STATE_INIT && 
+        g_task2_ctx.state != TASK_STATE_RUNNING) {
+        return;
+    }
+    
+    /* 计算已运行时间 */
+    g_task2_ctx.elapsed_time = uwTick - g_task2_ctx.start_time;
+    
+    /* 超时检查 */
+    if (g_task2_ctx.elapsed_time > g_task2_ctx.timeout_ms) {
+        g_task2_ctx.state = TASK_STATE_TIMEOUT;
+        ChassisTaskStop();
+        return;
+    }
+    
+    /* ========== INIT 状态：等待陀螺仪校准完成 ========== */
+    if (g_task2_ctx.state == TASK_STATE_INIT) {
+        /* 检查陀螺仪校准是否完成 */
+        if (jy61p_is_calibration_done()) {
+            g_task2_ctx.gyro_calibration_done = 1;
+            
+            /* 校准完成后，重新记录任务开始时间（避免校准时间影响） */
+            g_task2_ctx.start_time = uwTick;
+            g_task2_ctx.elapsed_time = 0;
+            g_task2_ctx.phase_start_time = uwTick;
+            
+            /* 获取目标1的角度 */
+            int16_t target_yaw_1 = Task2_GetTargetYaw(g_task2_ctx.target_zone_1);
+            
+            /* 启动底盘任务（参数化版本）
+             * 第一阶段：沿0°直行到交汇点（5s）
+             * 转弯阶段：从0°转弯到目标1角度（2s）
+             * 第二阶段：沿目标1角度直行（5s）
+             */
+            ChassisTaskStartWithParams(
+                0,                          // stage1_yaw: 0°
+                TASK1_STAGE1_DURATION,      // stage1_duration: 5000ms
+                target_yaw_1,               // turn1_yaw: 目标1角度
+                TASK1_TURN_DURATION,        // turn1_duration: 2000ms
+                target_yaw_1,               // stage2_yaw: 目标1角度
+                TASK1_STAGE2_DURATION,      // stage2_duration: 5000ms
+                TASK1_BASE_PWM,             // base_pwm: 200
+                TASK1_TURN_PWM              // turn_pwm: 0（原地转弯）
+            );
+            
+            g_task2_ctx.chassis_task_running = 1;
+            g_task2_ctx.state = TASK_STATE_RUNNING;
+            g_task2_ctx.phase = 0;  /* 前往目标1 */
+        }
+    }
+    
+    /* ========== RUNNING 状态：监控底盘任务执行 ========== */
+    if (g_task2_ctx.state == TASK_STATE_RUNNING) {
+        uint8_t chassis_state = ChassisTaskGetState();
+        uint32_t phase_elapsed = uwTick - g_task2_ctx.phase_start_time;
+        
+        /* ===== 阶段0：前往目标1 ===== */
+        if (g_task2_ctx.phase == 0) {
+            ChassisTaskUpdate();
+            
+            if (chassis_state == CHASSIS_TASK_STATE_COMPLETE) {
+                /* 到达目标1，进入停顿阶段 */
+                g_task2_ctx.phase = 1;
+                g_task2_ctx.phase_start_time = uwTick;
+                ChassisTaskStop();
+                g_task2_ctx.chassis_task_running = 0;
+                
+                /* 蜂鸣器提示到达目标1 */
+                beep_1s_start();
+            }
+        }
+        
+        /* ===== 阶段1：停顿2s ===== */
+        else if (g_task2_ctx.phase == 1) {
+            if (phase_elapsed >= 2000) {
+                /* 停顿完成，进入旋转180°阶段 */
+                g_task2_ctx.phase = 2;
+                g_task2_ctx.phase_start_time = uwTick;
+                
+                /* 获取目标1的角度 */
+                int16_t target_yaw_1 = Task2_GetTargetYaw(g_task2_ctx.target_zone_1);
+                
+                /* 计算旋转180°后的角度 */
+                int16_t rotated_yaw = Task2_RotateYaw180(target_yaw_1);
+                
+                /* 启动旋转180°（原地转弯，2s） */
+                ChassisTaskStartWithParams(
+                    rotated_yaw,                // stage1_yaw: 旋转后的角度
+                    0,                          // stage1_duration: 0（不直行）
+                    rotated_yaw,                // turn1_yaw: 旋转后的角度
+                    TASK1_TURN_DURATION,        // turn1_duration: 2000ms（旋转时间）
+                    rotated_yaw,                // stage2_yaw: 旋转后的角度
+                    0,                          // stage2_duration: 0（不直行）
+                    TASK1_BASE_PWM,             // base_pwm: 200
+                    TASK1_TURN_PWM              // turn_pwm: 0（原地转弯）
+                );
+                
+                g_task2_ctx.chassis_task_running = 1;
+            }
+        }
+        
+        /* ===== 阶段2：旋转180° ===== */
+        else if (g_task2_ctx.phase == 2) {
+            ChassisTaskUpdate();
+            
+            if (chassis_state == CHASSIS_TASK_STATE_COMPLETE) {
+                /* 旋转完成，进入直行到交汇点阶段 */
+                g_task2_ctx.phase = 3;
+                g_task2_ctx.phase_start_time = uwTick;
+                
+                /* 获取目标1的角度 */
+                int16_t target_yaw_1 = Task2_GetTargetYaw(g_task2_ctx.target_zone_1);
+                
+                /* 计算旋转180°后的角度 */
+                int16_t rotated_yaw = Task2_RotateYaw180(target_yaw_1);
+                
+                /* 启动直行到交汇点（沿旋转后的方向直行5s） */
+                ChassisTaskStartWithParams(
+                    rotated_yaw,                // stage1_yaw: 旋转后的角度
+                    TASK1_STAGE1_DURATION,      // stage1_duration: 5000ms（直行时间）
+                    rotated_yaw,                // turn1_yaw: 旋转后的角度
+                    0,                          // turn1_duration: 0（不转弯）
+                    rotated_yaw,                // stage2_yaw: 旋转后的角度
+                    0,                          // stage2_duration: 0（不直行）
+                    TASK1_BASE_PWM,             // base_pwm: 200
+                    TASK1_TURN_PWM              // turn_pwm: 0
+                );
+                
+                g_task2_ctx.chassis_task_running = 1;
+            }
+        }
+        
+        /* ===== 阶段3：直行到交汇点 ===== */
+        else if (g_task2_ctx.phase == 3) {
+            ChassisTaskUpdate();
+            
+            if (chassis_state == CHASSIS_TASK_STATE_COMPLETE) {
+                /* 到达交汇点，进入转向目标2阶段 */
+                g_task2_ctx.phase = 4;
+                g_task2_ctx.phase_start_time = uwTick;
+                
+                /* 获取目标1和目标2的角度 */
+                int16_t target_yaw_1 = Task2_GetTargetYaw(g_task2_ctx.target_zone_1);
+                int16_t target_yaw_2 = Task2_GetTargetYaw(g_task2_ctx.target_zone_2);
+                
+                /* 计算旋转180°后的角度 */
+                int16_t rotated_yaw = Task2_RotateYaw180(target_yaw_1);
+                
+                /* 启动转向目标2（从旋转后的角度转弯到目标2角度，2s） */
+                ChassisTaskStartWithParams(
+                    rotated_yaw,                // stage1_yaw: 旋转后的角度
+                    0,                          // stage1_duration: 0（不直行）
+                    target_yaw_2,               // turn1_yaw: 目标2角度
+                    TASK1_TURN_DURATION,        // turn1_duration: 2000ms（转弯时间）
+                    target_yaw_2,               // stage2_yaw: 目标2角度
+                    0,                          // stage2_duration: 0（不直行）
+                    TASK1_BASE_PWM,             // base_pwm: 200
+                    TASK1_TURN_PWM              // turn_pwm: 0（原地转弯）
+                );
+                
+                g_task2_ctx.chassis_task_running = 1;
+            }
+        }
+        
+        /* ===== 阶段4：转向目标2 ===== */
+        else if (g_task2_ctx.phase == 4) {
+            ChassisTaskUpdate();
+            
+            if (chassis_state == CHASSIS_TASK_STATE_COMPLETE) {
+                /* 转向完成，进入前往目标2阶段 */
+                g_task2_ctx.phase = 5;
+                g_task2_ctx.phase_start_time = uwTick;
+                
+                /* 获取目标2的角度 */
+                int16_t target_yaw_2 = Task2_GetTargetYaw(g_task2_ctx.target_zone_2);
+                
+                /* 启动直行到目标2（沿目标2角度直行5s） */
+                ChassisTaskStartWithParams(
+                    target_yaw_2,               // stage1_yaw: 目标2角度
+                    TASK1_STAGE2_DURATION,      // stage1_duration: 5000ms（直行时间）
+                    target_yaw_2,               // turn1_yaw: 目标2角度
+                    0,                          // turn1_duration: 0（不转弯）
+                    target_yaw_2,               // stage2_yaw: 目标2角度
+                    0,                          // stage2_duration: 0（不直行）
+                    TASK1_BASE_PWM,             // base_pwm: 200
+                    TASK1_TURN_PWM              // turn_pwm: 0
+                );
+                
+                g_task2_ctx.chassis_task_running = 1;
+            }
+        }
+        
+        /* ===== 阶段5：前往目标2 ===== */
+        else if (g_task2_ctx.phase == 5) {
+            ChassisTaskUpdate();
+            
+            if (chassis_state == CHASSIS_TASK_STATE_COMPLETE) {
+                /* 任务完成 */
+                g_task2_ctx.state = TASK_STATE_SUCCESS;
+                g_task2_ctx.chassis_task_running = 0;
+                
+                /* 启动蜂鸣器响1s */
+                beep_1s_start();
+            }
+        }
+    }
+    
+    /* 更新计数器 */
+    g_task2_ctx.update_count++;
 }
 
+/**
+ * @brief 停止 Task 2
+ * 
+ * 功能：
+ * - 停止底盘运动
+ * - 设置任务状态为 IDLE
+ */
 void Task2_Stop(void)
 {
-    /* TODO: 实现停止逻辑 */
+    /* 停止底盘任务 */
+    ChassisTaskStop();
+    g_task2_ctx.chassis_task_running = 0;
+    
+    /* 设置任务状态为 IDLE */
+    g_task2_ctx.state = TASK_STATE_IDLE;
 }
 
+/**
+ * @brief 重置 Task 2
+ * 
+ * 功能：
+ * - 重置任务状态
+ * - 清除运行时间
+ */
 void Task2_Reset(void)
 {
-    /* TODO: 实现重置逻辑 */
+    g_task2_ctx.state = TASK_STATE_IDLE;
+    g_task2_ctx.start_time = 0;
+    g_task2_ctx.elapsed_time = 0;
+    g_task2_ctx.gyro_calibration_done = 0;
+    g_task2_ctx.chassis_task_running = 0;
+    g_task2_ctx.phase = 0;
+    g_task2_ctx.phase_start_time = 0;
+    g_task2_ctx.update_count = 0;
 }
 
+/**
+ * @brief 获取 Task 2 的当前状态
+ * 
+ * @return 任务状态（IDLE/INIT/RUNNING/SUCCESS/FAILED/TIMEOUT）
+ */
 TaskState_t Task2_GetState(void)
 {
-    /* TODO: 实现获取状态逻辑 */
-    return TASK_STATE_IDLE;
+    return g_task2_ctx.state;
 }
 
+/**
+ * @brief 判断 Task 2 是否成功完成
+ * 
+ * @return true 表示成功，false 表示未成功
+ */
 bool Task2_IsSuccess(void)
 {
-    /* TODO: 实现判断成功逻辑 */
-    return false;
+    return (g_task2_ctx.state == TASK_STATE_SUCCESS);
 }
 
+/**
+ * @brief 设置两个目标区编号
+ * 
+ * @param zone1 第一个目标区（1-5）
+ * @param zone2 第二个目标区（1-5）
+ * 
+ * @note 必须在 Task2_Init() 之前调用
+ */
 void Task2_SetTargetZones(uint8_t zone1, uint8_t zone2)
 {
-    /* TODO: 实现设置目标区逻辑
-     * 
-     * 步骤：
-     * 1. 检查输入有效性
-     * 2. 设置两个目标区
-     */
+    if (zone1 >= 1 && zone1 <= 5) {
+        g_task2_ctx.target_zone_1 = zone1;
+    }
+    if (zone2 >= 1 && zone2 <= 5) {
+        g_task2_ctx.target_zone_2 = zone2;
+    }
 }
