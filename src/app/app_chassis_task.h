@@ -45,6 +45,19 @@ typedef struct {
     uint8_t state;                    // 当前任务状态
     uint32_t stage_start_tick;        // 当前阶段开始时刻
     uint32_t elapsed_ms;              // 当前阶段已运行时间
+    
+    // 动态参数
+    int16_t stage1_yaw;               // 第一阶段目标角度（°×100）
+    uint32_t stage1_duration;         // 第一阶段持续时间（ms）
+    
+    int16_t turn1_yaw;                // 转弯1目标角度（°×100）
+    uint32_t turn1_duration;          // 转弯1持续时间（ms）
+    
+    int16_t stage2_yaw;               // 第二阶段目标角度（°×100）
+    uint32_t stage2_duration;         // 第二阶段持续时间（ms）
+    
+    uint16_t base_pwm;                // 基础 PWM 占空比
+    uint16_t turn_pwm;                // 转弯时 PWM 占空比
 } ChassisTask_t;
 
 /* ============ 全局变量声明 ============ */
@@ -58,9 +71,32 @@ extern ChassisTask_t g_chassis_task;
 void ChassisTaskInit(void);
 
 /**
- * @brief 启动小车底盘任务
+ * @brief 启动小车底盘任务（使用默认参数）
  */
 void ChassisTaskStart(void);
+
+/**
+ * @brief 启动小车底盘任务（参数化版本）
+ *
+ * @param stage1_yaw      第一阶段目标角度（°×100）
+ * @param stage1_duration 第一阶段持续时间（ms）
+ * @param turn1_yaw       转弯1目标角度（°×100）
+ * @param turn1_duration  转弯1持续时间（ms）
+ * @param stage2_yaw      第二阶段目标角度（°×100）
+ * @param stage2_duration 第二阶段持续时间（ms）
+ * @param base_pwm        基础 PWM 占空比
+ * @param turn_pwm        转弯时 PWM 占空比
+ */
+void ChassisTaskStartWithParams(
+    int16_t stage1_yaw,
+    uint32_t stage1_duration,
+    int16_t turn1_yaw,
+    uint32_t turn1_duration,
+    int16_t stage2_yaw,
+    uint32_t stage2_duration,
+    uint16_t base_pwm,
+    uint16_t turn_pwm
+);
 
 /**
  * @brief 小车底盘任务主循环（状态机）

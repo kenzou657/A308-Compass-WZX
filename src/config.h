@@ -109,4 +109,25 @@
 /** 小车最大基础速度（PWM 占空比） */
 #define CHASSIS_MAX_BASE_PWM        350
 
+/* ============================================================================
+ * 任务一 - 目的地到角度映射
+ * ============================================================================ */
+
+/** 目的地编号到目标角度的映射（°×100） */
+#define DESTINATION_1_YAW           9000    // 目的地1：90°
+#define DESTINATION_2_YAW           4500    // 目的地2：45°
+#define DESTINATION_3_YAW           0       // 目的地3：0°
+#define DESTINATION_4_YAW           -4500   // 目的地4：-45°
+#define DESTINATION_5_YAW           -9000   // 目的地5：-90°
+
+/** 任务一 - 运动参数 */
+#define TASK1_STAGE1_DURATION       5000    // 第一阶段（直行到交汇点）：5000ms
+#define TASK1_TURN_DURATION         2000    // 转弯阶段：2000ms
+#define TASK1_STAGE2_DURATION       5000    // 第二阶段（沿目标角度直行）：5000ms
+#define TASK1_BASE_PWM              200     // 基础 PWM 占空比
+#define TASK1_TURN_PWM              0       // 转弯时 PWM 占空比（原地转弯）
+
+/** 陀螺仪零点校准参数 */
+#define GYRO_CALIBRATION_SAMPLES    20      // 校准采样次数
+
 #endif /* CONFIG_H */

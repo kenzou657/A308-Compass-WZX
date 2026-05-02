@@ -11,15 +11,22 @@
  * IDLE → INIT → RUNNING → SUCCESS/FAILED/TIMEOUT
  * 
  * 实现要点：
- * - 使用路径规划模块执行多阶段运动
+ * - 使用底盘任务模块执行多阶段运动
  * - 基于 uwTick 进行时间控制
- * - 超时检查：运动时间超过预期时间 20% 则失败
+ * - 每次进入任务都进行陀螺仪零点校准
+ * - 先沿0角度运动到路径交汇点（5s）
+ * - 再根据设定角度转弯面向目标角度（2s）
+ * - 再沿目标角度直行
+ * - 完成任务后蜂鸣器响1s
  */
 
 #include "app_task_1_line_tracking.h"
 #include "../drivers/drv_chassis.h"
 #include "../drivers/drv_buzzer.h"
+#include "../drivers/drv_jy61p.h"
 #include "../utils/timer.h"
+#include "../config.h"
+#include "app_chassis_task.h"
 #include <stdlib.h>
 
 /* ==================== 任务上下文结构 ==================== */
@@ -34,10 +41,12 @@ typedef struct {
     uint32_t elapsed_time;          /* 已运行时间 */
     uint32_t timeout_ms;            /* 超时时间 */
     
-    /* 路径规划相关 */
-    uint16_t current_path_point;    /* 当前路径点索引 */
-    uint32_t path_point_start_time; /* 路径点开始时间 */
-    uint8_t path_state;             /* 路径执行状态（0: 运动中, 1: 停顿中, 2: 完成） */
+    /* 陀螺仪校准相关 */
+    uint8_t gyro_calibration_done;  /* 陀螺仪校准完成标志 */
+    uint32_t calibration_start_time;/* 校准开始时间 */
+    
+    /* 底盘任务相关 */
+    uint8_t chassis_task_running;   /* 底盘任务运行标志 */
     
     /* 调试信息 */
     uint32_t update_count;          /* 更新次数计数 */
@@ -57,6 +66,32 @@ static Task1_Context_t g_task1_ctx;
  */
 extern volatile uint32_t uwTick;
 
+/* ==================== 辅助函数 ==================== */
+
+/**
+ * @brief 根据目的地编号获取目标角度
+ * 
+ * @param destination 目的地编号（1-5）
+ * @return 目标角度（°×100）
+ */
+static int16_t Task1_GetTargetYaw(uint8_t destination)
+{
+    switch (destination) {
+        case 1:
+            return DESTINATION_1_YAW;
+        case 2:
+            return DESTINATION_2_YAW;
+        case 3:
+            return DESTINATION_3_YAW;
+        case 4:
+            return DESTINATION_4_YAW;
+        case 5:
+            return DESTINATION_5_YAW;
+        default:
+            return 0;
+    }
+}
+
 /* ==================== 函数实现 ==================== */
 
 /**
@@ -64,71 +99,121 @@ extern volatile uint32_t uwTick;
  * 
  * 功能：
  * - 初始化任务状态为 INIT
- * - 设置目标区编号
- * - 初始化路径规划
- * - 启动底盘运动
- * - 蜂鸣器提示：任务开始
+ * - 启动陀螺仪零点校准
+ * - 记录任务开始时间
+ * - 设置超时时间
  * 
  * @note 必须在 TaskManager_StartTask() 中调用
  */
 void Task1_Init(void)
 {
-    /* TODO: 实现初始化逻辑
-     * 
-     * 步骤：
-     * 1. 初始化任务状态为 TASK_STATE_INIT
-     * 2. 记录任务开始时间：g_task1_ctx.start_time = uwTick
-     * 3. 设置超时时间：g_task1_ctx.timeout_ms = 15000（15s）
-     * 4. 初始化路径规划：
-     *    - 根据 target_zone 查询预定义路径表
-     *    - 初始化路径点索引：current_path_point = 0
-     *    - 初始化路径状态：path_state = 0（运动中）
-     * 5. 启动底盘运动：
-     *    - 调用 ChassisSetMotion() 启动第一个路径点
-     *    - 参数：target_yaw, duration_ms, base_pwm, direction
-     * 6. 蜂鸣器提示：BuzzerBeep(100)（100ms 蜂鸣）
-     * 7. 设置任务状态为 TASK_STATE_RUNNING
-     */
+    /* 初始化任务状态为 INIT */
+    g_task1_ctx.state = TASK_STATE_INIT;
+    
+    /* 初始化时间相关变量 */
+    g_task1_ctx.start_time = 0;  /* 校准完成后再记录 */
+    g_task1_ctx.elapsed_time = 0;
+    
+    /* 设置超时时间：30s */
+    g_task1_ctx.timeout_ms = 30000;
+    
+    /* 初始化陀螺仪校准标志 */
+    g_task1_ctx.gyro_calibration_done = 0;
+    g_task1_ctx.calibration_start_time = uwTick;
+    
+    /* 启动陀螺仪零点校准（采集20个样本） */
+    jy61p_start_calibration(GYRO_CALIBRATION_SAMPLES);
+    
+    /* 初始化底盘任务 */
+    ChassisTaskInit();
+    g_task1_ctx.chassis_task_running = 0;
+    
+    /* 初始化调试计数 */
+    g_task1_ctx.update_count = 0;
 }
 
 /**
  * @brief Task 1 主循环
  * 
  * 功能：
- * - 计算已运行时间
- * - 超时检查
- * - 执行路径规划
- * - 检查任务完成
+ * - 等待陀螺仪校准完成
+ * - 校准完成后启动底盘任务
+ * - 监控底盘任务执行状态
+ * - 任务完成后蜂鸣器响1s
  * 
  * @note 应在主循环中定期调用（建议 10ms 周期）
  */
 void Task1_Run(void)
 {
-    /* TODO: 实现主循环逻辑
-     * 
-     * 步骤：
-     * 1. 检查任务状态：如果不是 RUNNING，直接返回
-     * 2. 计算已运行时间：
-     *    g_task1_ctx.elapsed_time = uwTick - g_task1_ctx.start_time
-     * 3. 超时检查：
-     *    if (elapsed_time > timeout_ms) {
-     *        state = TASK_STATE_TIMEOUT
-     *        ChassisStop()
-     *        BuzzerBeep(500)  // 500ms 蜂鸣（失败提示）
-     *        return
-     *    }
-     * 4. 执行路径规划：
-     *    - 调用 PathExecute() 执行当前路径点
-     *    - 检查路径点是否完成
-     *    - 如果完成，移动到下一个路径点
-     * 5. 检查任务完成：
-     *    if (所有路径点完成) {
-     *        state = TASK_STATE_SUCCESS
-     *        ChassisStop()
-     *        BuzzerBeep(200)  // 200ms 蜂鸣（成功提示）
-     *    }
-     * 6. 更新计数器：g_task1_ctx.update_count++
-     */
+    /* 检查任务状态：如果不是 INIT 或 RUNNING，直接返回 */
+    if (g_task1_ctx.state != TASK_STATE_INIT && 
+        g_task1_ctx.state != TASK_STATE_RUNNING) {
+        return;
+    }
+    
+    /* 计算已运行时间 */
+    g_task1_ctx.elapsed_time = uwTick - g_task1_ctx.start_time;
+    
+    /* 超时检查 */
+    if (g_task1_ctx.elapsed_time > g_task1_ctx.timeout_ms) {
+        g_task1_ctx.state = TASK_STATE_TIMEOUT;
+        ChassisTaskStop();
+        return;
+    }
+    
+    /* ========== INIT 状态：等待陀螺仪校准完成 ========== */
+    if (g_task1_ctx.state == TASK_STATE_INIT) {
+        /* 检查陀螺仪校准是否完成 */
+        if (jy61p_is_calibration_done()) {
+            g_task1_ctx.gyro_calibration_done = 1;
+            
+            /* 校准完成后，重新记录任务开始时间（避免校准时间影响） */
+            g_task1_ctx.start_time = uwTick;
+            g_task1_ctx.elapsed_time = 0;
+            
+            /* 获取目标角度 */
+            int16_t target_yaw = Task1_GetTargetYaw(g_task1_ctx.target_zone);
+            
+            /* 启动底盘任务（参数化版本）
+             * 第一阶段：沿0°直行到交汇点（5s）
+             * 转弯阶段：从0°转弯到目标角度（2s）
+             * 第二阶段：沿目标角度直行（5s）
+             */
+            ChassisTaskStartWithParams(
+                0,                          // stage1_yaw: 0°
+                TASK1_STAGE1_DURATION,      // stage1_duration: 5000ms
+                target_yaw,                 // turn1_yaw: 目标角度
+                TASK1_TURN_DURATION,        // turn1_duration: 2000ms
+                target_yaw,                 // stage2_yaw: 目标角度
+                TASK1_STAGE2_DURATION,      // stage2_duration: 5000ms
+                TASK1_BASE_PWM,             // base_pwm: 200
+                TASK1_TURN_PWM              // turn_pwm: 0（原地转弯）
+            );
+            
+            g_task1_ctx.chassis_task_running = 1;
+            g_task1_ctx.state = TASK_STATE_RUNNING;
+        }
+    }
+    
+    /* ========== RUNNING 状态：监控底盘任务执行 ========== */
+    if (g_task1_ctx.state == TASK_STATE_RUNNING && g_task1_ctx.chassis_task_running) {
+        /* 更新底盘任务状态机 */
+        ChassisTaskUpdate();
+        
+        /* 检查底盘任务是否完成 */
+        uint8_t chassis_state = ChassisTaskGetState();
+        if (chassis_state == CHASSIS_TASK_STATE_COMPLETE) {
+            /* 任务完成 */
+            g_task1_ctx.state = TASK_STATE_SUCCESS;
+            g_task1_ctx.chassis_task_running = 0;
+            
+            /* 启动蜂鸣器响1s */
+            beep_1s_start();
+        }
+    }
+    
+    /* 更新计数器 */
+    g_task1_ctx.update_count++;
 }
 
 /**
@@ -140,36 +225,29 @@ void Task1_Run(void)
  */
 void Task1_Stop(void)
 {
-    /* TODO: 实现停止逻辑
-     * 
-     * 步骤：
-     * 1. 停止底盘运动：ChassisStop()
-     * 2. 设置任务状态为 TASK_STATE_IDLE
-     */
+    /* 停止底盘任务 */
+    ChassisTaskStop();
+    g_task1_ctx.chassis_task_running = 0;
+    
+    /* 设置任务状态为 IDLE */
+    g_task1_ctx.state = TASK_STATE_IDLE;
 }
 
 /**
  * @brief 重置 Task 1
  * 
  * 功能：
- * - 重置任务状态为 IDLE
+ * - 重置任务状态
  * - 清除运行时间
- * - 重置路径规划
  */
 void Task1_Reset(void)
 {
-    /* TODO: 实现重置逻辑
-     * 
-     * 步骤：
-     * 1. 设置任务状态为 TASK_STATE_IDLE
-     * 2. 清除运行时间：
-     *    - g_task1_ctx.start_time = 0
-     *    - g_task1_ctx.elapsed_time = 0
-     * 3. 重置路径规划：
-     *    - g_task1_ctx.current_path_point = 0
-     *    - g_task1_ctx.path_state = 0
-     * 4. 重置计数器：g_task1_ctx.update_count = 0
-     */
+    g_task1_ctx.state = TASK_STATE_IDLE;
+    g_task1_ctx.start_time = 0;
+    g_task1_ctx.elapsed_time = 0;
+    g_task1_ctx.gyro_calibration_done = 0;
+    g_task1_ctx.chassis_task_running = 0;
+    g_task1_ctx.update_count = 0;
 }
 
 /**
@@ -179,12 +257,7 @@ void Task1_Reset(void)
  */
 TaskState_t Task1_GetState(void)
 {
-    /* TODO: 实现获取状态逻辑
-     * 
-     * 步骤：
-     * 1. 返回 g_task1_ctx.state
-     */
-    return TASK_STATE_IDLE;  /* 临时返回 */
+    return g_task1_ctx.state;
 }
 
 /**
@@ -194,12 +267,7 @@ TaskState_t Task1_GetState(void)
  */
 bool Task1_IsSuccess(void)
 {
-    /* TODO: 实现判断成功逻辑
-     * 
-     * 步骤：
-     * 1. 返回 (g_task1_ctx.state == TASK_STATE_SUCCESS)
-     */
-    return false;  /* 临时返回 */
+    return (g_task1_ctx.state == TASK_STATE_SUCCESS);
 }
 
 /**
@@ -211,64 +279,17 @@ bool Task1_IsSuccess(void)
  */
 void Task1_SetTargetZone(uint8_t zone)
 {
-    /* TODO: 实现设置目标区逻辑
-     * 
-     * 步骤：
-     * 1. 检查输入有效性：if (zone >= 1 && zone <= 5)
-     * 2. 设置目标区：g_task1_ctx.target_zone = zone
-     */
-}
-
-/* ==================== 内部辅助函数 ==================== */
-
-/**
- * @brief 执行路径规划（内部函数）
- * 
- * 功能：
- * - 根据当前路径点执行运动
- * - 检查路径点是否完成
- * - 移动到下一个路径点
- * 
- * @note 这是内部函数，不对外暴露
- */
-static void Task1_ExecutePath(void)
-{
-    /* TODO: 实现路径规划执行逻辑
-     * 
-     * 步骤：
-     * 1. 检查是否所有路径点都已完成
-     * 2. 获取当前路径点信息
-     * 3. 根据路径状态处理：
-     *    - 如果是运动中（path_state == 0）：
-     *      检查运动时间是否到达，如果到达则停止电机并进入停顿状态
-     *    - 如果是停顿中（path_state == 1）：
-     *      检查停顿时间是否到达，如果到达则移动到下一个路径点
-     * 4. 更新路径状态
-     */
+    if (zone >= 1 && zone <= 5) {
+        g_task1_ctx.target_zone = zone;
+    }
 }
 
 /**
- * @brief 获取目标区的路径规划（内部函数）
+ * @brief 获取目标区编号
  * 
- * @param zone 目标区编号（1-5）
- * @return 指向路径规划表的指针
- * 
- * @note 这是内部函数，不对外暴露
+ * @return 目标区编号（1-5）
  */
-static const void* Task1_GetPathTable(uint8_t zone)
+uint8_t Task1_GetTargetZone(void)
 {
-    /* TODO: 实现获取路径规划表逻辑
-     * 
-     * 步骤：
-     * 1. 根据 zone 查询预定义的路径规划表
-     * 2. 返回对应的路径规划表指针
-     * 
-     * 路径规划表应包含：
-     * - 目标区1：直行（0°）
-     * - 目标区2：左转45°
-     * - 目标区3：左转90°
-     * - 目标区4：右转45°
-     * - 目标区5：右转90°
-     */
-    return NULL;  /* 临时返回 */
+    return g_task1_ctx.target_zone;
 }

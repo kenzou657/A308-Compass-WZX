@@ -28,10 +28,20 @@ void ChassisTaskInit(void)
     g_chassis_task.state = CHASSIS_TASK_STATE_IDLE;
     g_chassis_task.stage_start_tick = 0;
     g_chassis_task.elapsed_ms = 0;
+    
+    // 初始化动态参数为默认值
+    g_chassis_task.stage1_yaw = CHASSIS_TASK_STAGE1_YAW;
+    g_chassis_task.stage1_duration = CHASSIS_TASK_STAGE1_DURATION;
+    g_chassis_task.turn1_yaw = CHASSIS_TASK_TURN1_YAW;
+    g_chassis_task.turn1_duration = CHASSIS_TASK_TURN1_DURATION;
+    g_chassis_task.stage2_yaw = CHASSIS_TASK_STAGE2_YAW;
+    g_chassis_task.stage2_duration = CHASSIS_TASK_STAGE2_DURATION;
+    g_chassis_task.base_pwm = CHASSIS_TASK_BASE_PWM;
+    g_chassis_task.turn_pwm = CHASSIS_TASK_TURN_PWM;
 }
 
 /**
- * @brief 启动小车底盘任务
+ * @brief 启动小车底盘任务（使用默认参数）
  */
 void ChassisTaskStart(void)
 {
@@ -40,11 +50,49 @@ void ChassisTaskStart(void)
     g_chassis_task.stage_start_tick = uwTick;
     g_chassis_task.elapsed_ms = 0;
     
-    // 启动第一阶段：目标角度 0°，直行 5000ms
+    // 启动第一阶段：使用结构体中的参数
     ChassisSetMotion(
-        CHASSIS_TASK_STAGE1_YAW,
-        CHASSIS_TASK_STAGE1_DURATION,
-        CHASSIS_TASK_BASE_PWM,
+        g_chassis_task.stage1_yaw,
+        g_chassis_task.stage1_duration,
+        g_chassis_task.base_pwm,
+        CHASSIS_DIR_FORWARD
+    );
+}
+
+/**
+ * @brief 启动小车底盘任务（参数化版本）
+ */
+void ChassisTaskStartWithParams(
+    int16_t stage1_yaw,
+    uint32_t stage1_duration,
+    int16_t turn1_yaw,
+    uint32_t turn1_duration,
+    int16_t stage2_yaw,
+    uint32_t stage2_duration,
+    uint16_t base_pwm,
+    uint16_t turn_pwm
+)
+{
+    // 设置动态参数
+    g_chassis_task.stage1_yaw = stage1_yaw;
+    g_chassis_task.stage1_duration = stage1_duration;
+    g_chassis_task.turn1_yaw = turn1_yaw;
+    g_chassis_task.turn1_duration = turn1_duration;
+    g_chassis_task.stage2_yaw = stage2_yaw;
+    g_chassis_task.stage2_duration = stage2_duration;
+    g_chassis_task.base_pwm = base_pwm;
+    g_chassis_task.turn_pwm = turn_pwm;
+    
+    // 重置任务状态为第一阶段
+    g_chassis_task.state = CHASSIS_TASK_STATE_STAGE1;
+    g_chassis_task.stage_start_tick = uwTick;
+    g_chassis_task.elapsed_ms = 0;
+    
+    // 启动第一阶段
+    ChassisSetMotion(
+        g_chassis_task.stage1_yaw,
+        g_chassis_task.stage1_duration,
+        g_chassis_task.base_pwm,
         CHASSIS_DIR_FORWARD
     );
 }
@@ -75,7 +123,7 @@ void ChassisTaskUpdate(void)
     switch (g_chassis_task.state) {
         case CHASSIS_TASK_STATE_STAGE1:
             // 第一阶段：检查是否运行时间到达
-            if (g_chassis_task.elapsed_ms >= CHASSIS_TASK_STAGE1_DURATION) {
+            if (g_chassis_task.elapsed_ms >= g_chassis_task.stage1_duration) {
                 // 切换到停车暂停1
                 g_chassis_task.state = CHASSIS_TASK_STATE_STOP_PAUSE1;
                 g_chassis_task.stage_start_tick = uwTick;
@@ -94,11 +142,11 @@ void ChassisTaskUpdate(void)
                 g_chassis_task.stage_start_tick = uwTick;
                 g_chassis_task.elapsed_ms = 0;
                 
-                // 启动转弯阶段1：原地转弯到 -45°，PWM 占空比为 0
+                // 启动转弯阶段1：使用动态参数
                 ChassisSetMotion(
-                    CHASSIS_TASK_TURN1_YAW,
-                    CHASSIS_TASK_TURN1_DURATION,
-                    CHASSIS_TASK_TURN_PWM,
+                    g_chassis_task.turn1_yaw,
+                    g_chassis_task.turn1_duration,
+                    g_chassis_task.turn_pwm,
                     CHASSIS_DIR_FORWARD
                 );
             }
@@ -106,7 +154,7 @@ void ChassisTaskUpdate(void)
         
         case CHASSIS_TASK_STATE_TURN1:
             // 转弯阶段1：检查是否运行时间到达
-            if (g_chassis_task.elapsed_ms >= CHASSIS_TASK_TURN1_DURATION) {
+            if (g_chassis_task.elapsed_ms >= g_chassis_task.turn1_duration) {
                 // 切换到停车暂停2
                 g_chassis_task.state = CHASSIS_TASK_STATE_STOP_PAUSE2;
                 g_chassis_task.stage_start_tick = uwTick;
@@ -125,11 +173,11 @@ void ChassisTaskUpdate(void)
                 g_chassis_task.stage_start_tick = uwTick;
                 g_chassis_task.elapsed_ms = 0;
                 
-                // 启动第二阶段：目标角度 -45°，直行 5000ms
+                // 启动第二阶段：使用动态参数
                 ChassisSetMotion(
-                    CHASSIS_TASK_STAGE2_YAW,
-                    CHASSIS_TASK_STAGE2_DURATION,
-                    CHASSIS_TASK_BASE_PWM,
+                    g_chassis_task.stage2_yaw,
+                    g_chassis_task.stage2_duration,
+                    g_chassis_task.base_pwm,
                     CHASSIS_DIR_FORWARD
                 );
             }
@@ -137,7 +185,7 @@ void ChassisTaskUpdate(void)
         
         case CHASSIS_TASK_STATE_STAGE2:
             // 第二阶段：检查是否运行时间到达
-            if (g_chassis_task.elapsed_ms >= CHASSIS_TASK_STAGE2_DURATION) {
+            if (g_chassis_task.elapsed_ms >= g_chassis_task.stage2_duration) {
                 // 切换到停车暂停3
                 g_chassis_task.state = CHASSIS_TASK_STATE_STOP_PAUSE3;
                 g_chassis_task.stage_start_tick = uwTick;

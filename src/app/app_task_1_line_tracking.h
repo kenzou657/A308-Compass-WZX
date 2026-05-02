@@ -94,11 +94,18 @@ bool Task1_IsSuccess(void);
 
 /**
  * @brief 设置目标区编号
- * 
+ *
  * @param zone 目标区编号（1-5）
- * 
+ *
  * @note 必须在 Task1_Init() 之前调用
  */
 void Task1_SetTargetZone(uint8_t zone);
+
+/**
+ * @brief 获取目标区编号
+ *
+ * @return 目标区编号（1-5）
+ */
+uint8_t Task1_GetTargetZone(void);
 
 #endif /* APP_TASK_1_LINE_TRACKING_H */

@@ -219,6 +219,14 @@ static void Chassis_UpdateMotors(void)
         // 直行模式：差速控制
         left_pwm_raw = g_chassis.base_pwm - pwm_delta;
         right_pwm_raw = g_chassis.base_pwm + pwm_delta;
+        
+        // 直行模式限幅：当 PWM 小于 0 时，输出 0（防止反向）
+        if (left_pwm_raw < 0) {
+            left_pwm_raw = 0;
+        }
+        if (right_pwm_raw < 0) {
+            right_pwm_raw = 0;
+        }
     } else {
         // 转弯模式：原地转弯
         // yaw_error > 0 时向右转：左电机前进，右电机后退

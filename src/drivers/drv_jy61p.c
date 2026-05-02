@@ -119,7 +119,7 @@ int jy61p_get_angle(jy61p_angle_t *angle)
 {
     // 直接返回最新缓存的数据，不检查 angle_updated
     angle->yaw = g_jy61p_rx.angle.yaw;
-    angle->yaw_deg_x100 = g_jy61p_rx.angle.yaw_deg_x100 - g_jy61p_rx.angle.yaw_offset;
+    angle->yaw_deg_x100 = g_jy61p_rx.angle.yaw_deg_x100 - g_jy61p_rx.angle.yaw_offset;  // 应用零点偏移
     angle->yaw_offset = g_jy61p_rx.angle.yaw_offset;
     
     return 0;  // 总是成功
