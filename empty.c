@@ -51,6 +51,7 @@
 #include "app_task_manager.h"
 #include "oled.h"
 #include "app_oled_display.h"
+#include "app_task_4_digit_recognition.h"
 
 // 变量创建区
 volatile uint32_t uwTick_Motor_Set_Point = 0;   // 控制Motor_Proc的执行速度
@@ -73,6 +74,7 @@ void PID_Control_Proc(void);
 void Chassis_Control_Proc(void);
 void OLED_Proc(void);
 void Key_Proc(void);
+void Camera_UART_Parse_Proc(void);
 
 int main(void)
 {
@@ -131,6 +133,7 @@ int main(void)
         Motor_Proc();
         PID_Control_Proc();
         IMU_Proc();
+        Camera_UART_Parse_Proc();  // 摄像头串口数据解析
         Chassis_Control_Proc();  // 小车底盘闭环控制（包含任务管理器更新）
         OLED_Proc();            // OLED显示更新
         Key_Proc();             // 按键扫描和逻辑处理
@@ -326,5 +329,67 @@ void OLED_Proc(void)
     
     // 更新OLED显示
     OLED_Display_Update();
+}
+
+// ============ 摄像头串口数据处理函数 ============
+/**
+ * @brief 摄像头串口0接收数据处理函数
+ *
+ * 执行周期：每次主循环执行
+ * 功能：
+ * - 获取摄像头接收中断处理后的数据（由 isr_uart.c 中的 camera_uart_rx_callback() 处理）
+ * - 在主循环中处理摄像头识别结果
+ * - 根据工作模式分发数据到相应的任务处理
+ *
+ * 数据帧格式：[AA 55] [Mode] [ID] [Data_X(2)] [Data_Y(2)] [Reserved] [Checksum] [0D 0A]
+ * 字节偏移：   0    1     2      3    4-5       6-7        8         9         10  11
+ *
+ * 工作模式：
+ * - 0x01: 寻线模式（返回线条偏移量）
+ * - 0x02: 数字识别模式（返回识别的数字ID）
+ *
+ * 注意：摄像头数据解析在 UART0 中断处理函数中完成（isr_uart.c），
+ *      本函数仅负责在主循环中获取和处理已解析的数据
+ */
+void Camera_UART_Parse_Proc(void)
+{
+    // 检查是否有有效的摄像头数据
+    if (g_camera_uart.rx_frame.valid) {
+        camera_frame_data_t frame_data;
+        
+        // 获取最新接收的摄像头数据
+        if (camera_uart_get_rx_frame(&frame_data) == 0) {
+            // 数据有效，根据工作模式处理摄像头识别结果
+            
+            switch (frame_data.mode) {
+                case CAMERA_MODE_LINE_TRACKING:
+                    // 寻线模式：处理线条偏移量
+                    // frame_data.data_x: X方向偏移（放大1000倍）
+                    // frame_data.data_y: Y方向偏移或角度（放大1000倍）
+                    // TODO: 将数据分发到寻线任务处理
+                    break;
+                    
+                case CAMERA_MODE_DIGIT_RECOG:
+                    // 数字识别模式：处理识别结果
+                    // frame_data.id: 识别的数字ID（1-5）
+                    // frame_data.data_x: 数字中心X坐标
+                    // frame_data.data_y: 数字中心Y坐标
+                    //
+                    // 将识别结果分发到任务四处理
+                    // 任务四会根据 id 值鸣响蜂鸣器
+                    // 例如：id=3 则鸣响 3 声
+                    if (frame_data.id > 0 && frame_data.id <= 5) {
+                        // 有效的数字识别结果，数据已保存在 g_camera_uart.rx_frame 中
+                        // 任务四的 Task4_Run() 会定期检查 g_camera_uart.rx_frame
+                        // 并根据 id 值进行蜂鸣处理
+                    }
+                    break;
+                    
+                default:
+                    // 未知模式
+                    break;
+            }
+        }
+    }
 }
 
